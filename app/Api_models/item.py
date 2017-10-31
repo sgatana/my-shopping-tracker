@@ -7,7 +7,7 @@ class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
     price = db.Column(db.Float())
-    quantity = db.Column(db.Integer())
+    quantity = db.Column(db.Float())
     shoppinglist_id = db.Column(db.Integer, db.ForeignKey('shoppinglists.id'))
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_on = db.Column(db.DateTime(), default=datetime.utcnow)

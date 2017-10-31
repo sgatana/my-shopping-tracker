@@ -6,7 +6,7 @@ from app.Api_models.item import Item
 class ShoppingList(db.Model):
     __tablename__ = "shoppinglists"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64))
+    name = db.Column(db.String(64), unique=True)
     description = db.Column(db.String(180))
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     items = db.relationship(Item, backref='shoppinglist', lazy='dynamic')

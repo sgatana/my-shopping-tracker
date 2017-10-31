@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify,request, g
 from flask_restplus import Api, Resource
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model
 from app.Api_models.users import User
-from app.methods import register_user
+from app.methods import register_user, add_shopping_list
 from flask_httpauth import HTTPBasicAuth
 
 bp = Blueprint('api',__name__)
@@ -119,10 +119,18 @@ class Login(Resource):
 @ns.route('/ShoppingList')
 class ShoppigList(Resource):
     @ns.expect(shoppinglist_model)
+    @auth.login_required
     def post(self):
         """
         Add Shopping List
         """
+        shoppinglist=request.json()
+        if User.query.filter_by(email=shoppinglist['name']).first() is not None:
+            add_shopping_list(shoppinglist)
+            return jsonify({'message':'Shopping list added successfully'})
+        else:
+            return jsonify({'message':'shopping list already exists'})
+
     @api.response(404, "ShoppingList Not Found")
     def get(self):
         """
