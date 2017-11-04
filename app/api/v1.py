@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify,request, g
 from flask_restplus import Api, Resource
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model
 from app.Api_models.users import User
+from app.Api_models.shoppinglist import ShoppingList
 from app.methods import register_user, add_shopping_list
 from flask_httpauth import HTTPBasicAuth
 
@@ -15,10 +16,34 @@ api = Api(bp, version='1.0', title='ShoppingList  API',
           description='A simple ShoppingList API')
 
 config=os.environ.get('FLASK_CONFIG')
+
+# implement error handler
+
+
+@bp.app_errorhandler(404)
+def not_found(e):
+    response = jsonify({'status': 404, 'error': 'not found', 'message': 'invalid resource url'})
+    response.status_code = 404
+    return response
+
+
+@auth.error_handler
+def unauthorized_access():
+    response = jsonify({'status':401, 'message':'Invalid credentials'})
+    return response
+
+
+@bp.app_errorhandler(500)
+def internal_server_error(e):
+    response = jsonify({'status':500, 'error':'internal server error'})
+    response.status_code=500
+    return response
 """
 implement verify password callback method to allow auth
 (verify if user is logged in)
 """
+
+
 @auth.verify_password
 def verify_password(email_or_token, password):
     # first try to authenticate by token
@@ -124,19 +149,18 @@ class ShoppigList(Resource):
         """
         Add Shopping List
         """
-        shoppinglist=request.json()
-        if User.query.filter_by(email=shoppinglist['name']).first() is not None:
-            add_shopping_list(shoppinglist)
-            return jsonify({'message':'Shopping list added successfully'})
-        else:
-            return jsonify({'message':'shopping list already exists'})
+        add_shopping_list(request.json)
+        return jsonify({'message':'shopping list add successfully'})
 
     @api.response(404, "ShoppingList Not Found")
     def get(self):
         """
         Get Shopping Lists
         """
-        return Users.query.all()
+        shoppinglists = ShoppingList.query.all()
+        # print(len(shoppinglists))
+        return jsonify({'message':'shopping lists Found'})
+
 
 @ns.route('/ShoppingList/<int:id>')
 @ns.expect(update_shoppinglist_model)
