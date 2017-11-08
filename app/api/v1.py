@@ -1,11 +1,14 @@
 import os
 from flask import Blueprint, jsonify,request, g
-from flask_restplus import Api, Resource
-from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model
+from flask_restplus import Api, Resource, marshal
+from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
+    add_item_model, user_model
 from app.Api_models.users import User
 from app.Api_models.shoppinglist import ShoppingList
-from app.methods import register_user, add_shopping_list
+from app.Api_models.item import Item
+from app.methods import register_user, add_shopping_list, add_item
 from flask_httpauth import HTTPBasicAuth
+from app.api.parsers import item_parser
 
 bp = Blueprint('api',__name__)
 # app.wsgi_app = ProxyFix(app.wsgi_app)
@@ -76,48 +79,12 @@ class Users(Resource):
         return jsonify({"message":"registration successful"})
 
 
-@ns.route('/users')
-class Users(Resource):
-    @auth.login_required
-    def get(self):
-        """
-        Get All users
-        """
-        users=User.query.all()
-        all_users=[]
-        for user in users:
-            user_data = {}
-            user_data['id']=user.id
-            user_data['username']=user.username
-            user_data['email'] = user.email
-            user_data['password'] =user.password
-            user_data['date'] =user.created_on
-            user_data['modified'] =user.date_modified
-            all_users.append(user_data)
-
-        return jsonify({"users": all_users})
-
-@ns.route('/users/<id>')
+@ns.route('/user')
 class user(Resource):
     @auth.login_required
-    def get(self, id):
-        """
-        Get user using ID
-        :param id:
-        """
-        user=User.query.filter(User.id==id).first()
-        if not user:
-            # raise "no"
-            return jsonify({'message':'no user found'})
-        user_data = {}
-        user_data['id'] = user.id
-        user_data['username'] = user.username
-        user_data['email'] = user.email
-        user_data['password'] = user.password
-        user_data['date'] = user.created_on
-        user_data['modified'] = user.date_modified
+    def get(self):
+        return marshal(g.user, user_model)
 
-        return jsonify({'user': user_data})
 @ns.route('/login')
 class Login(Resource):
     @api.response(200, "User logged in Successfully")
@@ -142,7 +109,7 @@ class Login(Resource):
 
 
 @ns.route('/ShoppingList')
-class ShoppigList(Resource):
+class Shopping_List(Resource):
     @ns.expect(shoppinglist_model)
     @auth.login_required
     def post(self):
@@ -153,13 +120,24 @@ class ShoppigList(Resource):
         return jsonify({'message':'shopping list add successfully'})
 
     @api.response(404, "ShoppingList Not Found")
+    @auth.login_required
     def get(self):
         """
         Get Shopping Lists
         """
-        shoppinglists = ShoppingList.query.all()
-        # print(len(shoppinglists))
-        return jsonify({'message':'shopping lists Found'})
+        shoppinglists = ShoppingList.query.filter_by(owner_id=g.user.id).all()
+        if not shoppinglists:
+            return jsonify({'message':'you have not crreated a shoppinglist'})
+        shopping_lists=[]
+        for shoppinglist in shoppinglists:
+            shopping_list={}
+            shopping_list['id']=shoppinglist.id
+            shopping_list['name']=shoppinglist.name
+            shopping_list['description']=shoppinglist.description
+            shopping_list['onwer']=shoppinglist.owner_id
+            shopping_list['date']=shoppinglist.created_on
+            shopping_lists.append(shopping_list)
+        return jsonify({'Shopping List(s)':shopping_lists})
 
 
 @ns.route('/ShoppingList/<int:id>')
@@ -168,6 +146,70 @@ class UpdateshoppingList(Resource):
     def put(self):
         """
         Update Shopping List
+        """
+
+    def delete(self):
+        """
+        Delete Shopping List
+        """
+
+    def get(self):
+        """
+        Find Shopping list by id
+        """
+
+
+@ns.route('/items')
+@ns.expect(add_item_model)
+class Items(Resource):
+    @auth.login_required
+    def post(self):
+        """
+        Add a ShoppingList Item
+        """
+        args = item_parser.parse_args()
+        name = args.get('name')
+        price = args.get('price')
+        quantity = args.get('quantity')
+        shoppinglist_id = args.get('shoppinglist_id')
+        shoppinglist = ShoppingList.query.filter_by(id=shoppinglist_id).filter_by(owner_id=g.user.id).first()
+        if shoppinglist:
+            add_item(name=name, price=price, quantity=quantity, shoppinglist=shoppinglist, owner_id=g.user.id)
+            return jsonify({'message':'item successfully added'})
+        else:
+            return jsonify({'message':'shopping not found'})
+
+    @auth.login_required
+    @ns.response(404, "Item(s) Not Found")
+    def get(self):
+        """
+        Get Shoppinglist items
+        """
+        items=Item.query.filter_by(owner_id=g.user.id).all()
+        if not items:
+            return jsonify({'message':'item and shopping does not exist'})
+        shoppinglist_items = []
+        for item in items:
+            all_items = {}
+            all_items['name']=item.name
+            all_items['id']=item.id
+            all_items['price']=item.price
+            all_items['quantity']=item.quantity
+            all_items['shoppinglist_id']=item.shoppinglist_id
+            all_items['date created']=item.created_on
+            shoppinglist_items.append(all_items)
+            return jsonify({'message':shoppinglist_items})
+
+@ns.route('/item/<int:id>')
+class item(Resource):
+    def put(self):
+        """
+        Update Item
+        """
+
+    def delete(self):
+        """
+        Delete Item
         """
 
 
