@@ -9,4 +9,10 @@ item_parser.add_argument('price', required=True,
 item_parser.add_argument('quantity', required=True,
                          help='Item Quantity should not be a string')
 item_parser.add_argument('shoppinglist_id', type=int, required=True,
-                         help='Shoppinglist(id) to add item to Required')
+                         help='Shoppinglist id is Required')
+
+update_shoppinglist_parser = reqparse.RequestParser()
+update_shoppinglist_parser.add_argument('name', type=str,
+                                        help='New Shoppinglist Name')
+update_shoppinglist_parser.add_argument('description', type=str,
+                                 help='Shoppinglist description should not be blank')

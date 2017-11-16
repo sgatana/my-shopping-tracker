@@ -39,3 +39,4 @@ add_item_model = ns.model('Items', {
     'quantity':fields.String(default="quantity"),
     'shoppinglist_id':fields.String(default="1")
 })
+

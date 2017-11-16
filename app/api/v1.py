@@ -6,13 +6,12 @@ from app.Api_models import ns, register_model, login_model, shoppinglist_model, 
 from app.Api_models.users import User
 from app.Api_models.shoppinglist import ShoppingList
 from app.Api_models.item import Item
-from app.methods import register_user, add_shopping_list, add_item
+from app.methods import register_user, add_shopping_list, add_item, delete_item, update_shopping_list
 from flask_httpauth import HTTPBasicAuth
-from app.api.parsers import item_parser
+from app.api.parsers import item_parser, update_shoppinglist_parser
+
 
 bp = Blueprint('api',__name__)
-# app.wsgi_app = ProxyFix(app.wsgi_app)
-
 auth=HTTPBasicAuth()
 
 api = Api(bp, version='1.0', title='ShoppingList  API',
@@ -21,8 +20,6 @@ api = Api(bp, version='1.0', title='ShoppingList  API',
 config=os.environ.get('FLASK_CONFIG')
 
 # implement error handler
-
-
 @bp.app_errorhandler(404)
 def not_found(e):
     response = jsonify({'status': 404, 'error': 'not found', 'message': 'invalid resource url'})
@@ -135,23 +132,39 @@ class Shopping_List(Resource):
             shopping_list['name']=shoppinglist.name
             shopping_list['description']=shoppinglist.description
             shopping_list['onwer']=shoppinglist.owner_id
-            shopping_list['date']=shoppinglist.created_on
+            shopping_list['date created']=shoppinglist.created_on
+            shopping_list['modified date']=shoppinglist.modified_on
             shopping_lists.append(shopping_list)
         return jsonify({'Shopping List(s)':shopping_lists})
 
 
 @ns.route('/ShoppingList/<int:id>')
-@ns.expect(update_shoppinglist_model)
 class UpdateshoppingList(Resource):
-    def put(self):
+    @auth.login_required
+    @ns.expect(update_shoppinglist_model)
+    def put(self, id):
         """
         Update Shopping List
         """
+        args=update_shoppinglist_parser.parse_args()
+        name=args.get('name')
+        description=args.get('description')
+        shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        if not shoppinglist:
+            return jsonify({'message': 'no shopping list with the provided id', 'status': 404})
+        update_shopping_list(shoppinglist, name, description)
+        return jsonify({'message':'shopping list update successfully'})
 
-    def delete(self):
+    @auth.login_required
+    def delete(self, id):
         """
         Delete Shopping List
         """
+        shoppinglist=ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        if not shoppinglist:
+            return jsonify({'message':'no shopping list with the provided id','status': 404})
+        delete_item(shoppinglist)
+        return jsonify({'message':'shopping list deleted succssfully'})
 
     def get(self):
         """
@@ -206,10 +219,15 @@ class item(Resource):
         """
         Update Item
         """
-
-    def delete(self):
+    @auth.login_required
+    def delete(self, id):
         """
         Delete Item
         """
+        item=Item.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        if not item:
+            return jsonify({'message':'not item found with the provided id', 'status':404})
+        delete_item(item)
+        return jsonify({'message':'item deleted successfully'})
 
 

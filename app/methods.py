@@ -34,6 +34,20 @@ def add_item(name, price, quantity, shoppinglist, owner_id):
         return False
 
 
+def delete_item(item):
+    db.session.delete(item)
+    db.session.commit()
+
+
+def update_shopping_list(shoppinglist, name, description):
+    if description is not None:
+        shoppinglist.description = description
+    if name is not None:
+        shoppinglist.name = name
+    db.session.commit()
+
+
+
 
 
 

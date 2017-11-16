@@ -6,7 +6,7 @@ class Config(object):
     Common configurations
     """
 
-    DEBUG = True
+    DEBUG = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = "hellofromtheotherside"
 
