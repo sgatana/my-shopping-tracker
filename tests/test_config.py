@@ -16,7 +16,7 @@ class TestConfig(unittest.TestCase):
         self.assertFalse(self.development.SECRET_KEY is'hello')
 
     def test_testing_config(self):
-        self.assertTrue(self.testing.DEBUG)
+        self.assertFalse(self.testing.DEBUG)
         self.assertTrue(self.testing.SQLALCHEMY_DATABASE_URI == "postgresql://postgres:steve012@localhost/test_db")
         self.assertTrue(self.testing.TESTING)
 
