@@ -12,6 +12,7 @@ class TestConfig(unittest.TestCase):
     def test_development_config(self):
         self.assertTrue(self.development.DEBUG)
         self.assertTrue(self.development.SQLALCHEMY_ECHO)
+        self.assertTrue(self.development.SQLALCHEMY_DATABASE_URI == os.environ.get('DB_URL'))
         self.assertFalse(self.development.SECRET_KEY is'this is my secret key')
 
     def test_testing_config(self):
