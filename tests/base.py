@@ -30,3 +30,17 @@ class BaseTest(unittest.TestCase):
             db.drop_all()
             db.session.remove()
 
+    def create_shopping_lists(self, name, description):
+        """
+        create a shopping list with provided details
+        :param name:
+        :param description:
+        :return:
+        """
+        self.client.post(
+            "/v1/ShoppingList",
+            data=json.dumps({
+                "name":name,
+                "description": description
+            }),
+            content_type='application/json', headers=self.headers)

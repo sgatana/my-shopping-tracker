@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, jsonify,request, g
+from flask import Blueprint, jsonify,request, g, abort, make_response
 from flask_restplus import Api, Resource, marshal
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
     add_item_model, user_model, page_of_shoppinglist
@@ -68,12 +68,12 @@ class Users(Resource):
         Register a new user:
         """
         user = request.json
+        print(user)
         if User.query.filter_by(email=user['email']).first() is not None:
-            return jsonify({'message':'email already exist'})
+            return make_response(jsonify({'message':'email already exist'}), 409)
 
         register_user(user)
-
-        return jsonify({"message":"registration successful"})
+        return make_response(jsonify({"message":"registration successful"}), 201)
 
 
 @ns.route('/user')
@@ -91,11 +91,11 @@ class Login(Resource):
         """
         User Login
         """
-        user_data=request.json
-        user=User.query.filter_by(email=user_data['email']).first()
+        user_data = request.json
+        user = User.query.filter_by(email=user_data['email']).first()
         if user:
             if user.verify_password(user_data['password']):
-                g.user=user
+                g.user = user
                 token = g.user.generate_auth_token(config=config, expiration=600)
                 return jsonify({"token": token.decode('ascii'),
                                 "duration":600})
@@ -134,6 +134,22 @@ class Shopping_List(Resource):
         list = shoppinglists.paginate(page, limit, error_out=False)
         return list
 
+        """
+        shoppinglists = ShoppingList.query.filter_by(owner_id=g.user.id).all()
+        if not shoppinglists:
+            return jsonify({'message':'you have not crreated a shoppinglist'})
+        shopping_lists=[]
+        for shoppinglist in shoppinglists:
+            shopping_list={}
+            shopping_list['id']=shoppinglist.id
+            shopping_list['name']=shoppinglist.name
+            shopping_list['description']=shoppinglist.description
+            shopping_list['onwer']=shoppinglist.owner_id
+            shopping_list['date created']=shoppinglist.created_on
+            shopping_list['modified date']=shoppinglist.modified_on
+            shopping_lists.append(shopping_list)
+        return jsonify({'Shopping List(s)':shopping_lists})"""
+
 
 @ns.route('/ShoppingList/<int:id>')
 class UpdateshoppingList(Resource):
@@ -148,9 +164,9 @@ class UpdateshoppingList(Resource):
         description=args.get('description')
         shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not shoppinglist:
-            return jsonify({'message': 'no shopping list with the provided id', 'status': 404})
+            return make_response(jsonify({'message': 'no shopping list with the provided id'}), 404)
         update_shopping_list(shoppinglist, name, description)
-        return jsonify({'message':'shopping list update successfully'})
+        return make_response(jsonify({'message':'shopping list update successfully'}), 200)
 
     @auth.login_required
     def delete(self, id):
@@ -159,9 +175,9 @@ class UpdateshoppingList(Resource):
         """
         shoppinglist=ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not shoppinglist:
-            return jsonify({'message':'no shopping list with the provided id','status': 404})
+            return make_response(jsonify({'message':'no shopping list with the provided id'}), 404)
         delete_item(shoppinglist)
-        return jsonify({'message':'shopping list deleted succssfully'})
+        return make_response(jsonify({'message':'shopping list deleted succssfully'}), 200)
 
     def get(self):
         """
@@ -226,5 +242,7 @@ class item(Resource):
             return jsonify({'message':'not item found with the provided id', 'status':404})
         delete_item(item)
         return jsonify({'message':'item deleted successfully'})
+
+
 
 
