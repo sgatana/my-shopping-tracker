@@ -40,3 +40,14 @@ add_item_model = ns.model('Items', {
     'shoppinglist_id':fields.String(default="1")
 })
 
+pagination = ns.model('Page of Results', {
+    'page':fields.Integer(description='number of this page of results'),
+    'pages':fields.Integer(description='total numbers of pages of results'),
+    'limit':fields.Integer(description='number of items per page of results'),
+    'total':fields.Integer(description='Total number of results'),
+})
+
+page_of_shoppinglist=ns.inherit('page of shoppinglist', pagination, {
+    'items': fields.List(fields.Nested(shoppinglist_model))
+})
+

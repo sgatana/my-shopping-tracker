@@ -2,13 +2,13 @@ import os
 from flask import Blueprint, jsonify,request, g
 from flask_restplus import Api, Resource, marshal
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
-    add_item_model, user_model
+    add_item_model, user_model, page_of_shoppinglist
 from app.Api_models.users import User
 from app.Api_models.shoppinglist import ShoppingList
 from app.Api_models.item import Item
 from app.methods import register_user, add_shopping_list, add_item, delete_item, update_shopping_list
 from flask_httpauth import HTTPBasicAuth
-from app.api.parsers import item_parser, update_shoppinglist_parser
+from app.api.parsers import item_parser, update_shoppinglist_parser, pagination_parser
 
 
 bp = Blueprint('api',__name__)
@@ -118,24 +118,21 @@ class Shopping_List(Resource):
 
     @api.response(404, "ShoppingList Not Found")
     @auth.login_required
+    @ns.expect(pagination_parser)
+    @ns.marshal_with(page_of_shoppinglist)
     def get(self):
         """
         Get Shopping Lists
         """
-        shoppinglists = ShoppingList.query.filter_by(owner_id=g.user.id).all()
+        args = pagination_parser.parse_args(request)
+        page = args.get('page', 1)
+        limit = args.get('limit', 10)
+        shoppinglists = ShoppingList.query
         if not shoppinglists:
-            return jsonify({'message':'you have not crreated a shoppinglist'})
-        shopping_lists=[]
-        for shoppinglist in shoppinglists:
-            shopping_list={}
-            shopping_list['id']=shoppinglist.id
-            shopping_list['name']=shoppinglist.name
-            shopping_list['description']=shoppinglist.description
-            shopping_list['onwer']=shoppinglist.owner_id
-            shopping_list['date created']=shoppinglist.created_on
-            shopping_list['modified date']=shoppinglist.modified_on
-            shopping_lists.append(shopping_list)
-        return jsonify({'Shopping List(s)':shopping_lists})
+            return jsonify({'message': 'you have not crreated a shoppinglist'})
+
+        list = shoppinglists.paginate(page, limit, error_out=False)
+        return list
 
 
 @ns.route('/ShoppingList/<int:id>')
