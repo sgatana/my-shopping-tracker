@@ -44,3 +44,20 @@ class BaseTest(unittest.TestCase):
                 "description": description
             }),
             content_type='application/json', headers=self.headers)
+
+    def create_items(self, name, price, quantity, shoppinglist_id):
+        """
+        create the shopping list item
+        :param name:
+        :param price:
+        :param quantity:
+        :param shoppinglist_id:
+        :return:
+        """
+        self.client.post('/v1/items',
+                         data=json.dumps({
+                             "name": name,
+                             "price": price,
+                             "quantity": quantity,
+                             "shoppinglist_id": shoppinglist_id
+                         }), content_type='application/json', headers=self.headers)

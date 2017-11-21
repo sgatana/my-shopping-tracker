@@ -7,14 +7,15 @@ class ShoppinglistTestcase(BaseTest):
     this class represents shoppinglist testcase
     """
     def test_shoppinglist_creation(self):
+        self.create_shopping_lists("Breakfast","Very delicious")
         response = self.client.post('/v1/ShoppingList',
-                               data=json.dumps({
-                                   "name": "supper",
-                                   "description": "eat light meal"
-                               }),
+                                    data=json.dumps({
+                                      "name":"Lunch",
+                                      "description":"Delicious"
+                                    }),
                                content_type='application/json',
                                headers=self.headers)
-        self.assertEqual(200, response.status_code)
+        self.assertEqual(201, response.status_code)
 
     def test_get_shoppinglist(self):
         response=self.client.get('/v1/ShoppingList', headers=self.headers)
@@ -48,6 +49,13 @@ class ShoppinglistTestcase(BaseTest):
                                        "description": "updated shoppinglist"
                                    }), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 404)
+
+
+    def test_delete_shoppinglist(self):
+        self.create_shopping_lists("Lunch", "a delicious meal")
+        res=self.client.delete('/v1/ShoppingList/1', content_type='application/json', headers=self.headers)
+        self.assertEqual(200, res.status_code)
+
 
 
 
