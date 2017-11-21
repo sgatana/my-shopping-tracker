@@ -114,7 +114,7 @@ class Shopping_List(Resource):
         Add Shopping List
         """
         add_shopping_list(request.json)
-        return jsonify({'message':'shopping list add successfully'})
+        return make_response(jsonify({'message':'shopping list add successfully'}), 201)
 
     @api.response(404, "ShoppingList Not Found")
     @auth.login_required
@@ -179,10 +179,19 @@ class UpdateshoppingList(Resource):
         delete_item(shoppinglist)
         return make_response(jsonify({'message':'shopping list deleted succssfully'}), 200)
 
-    def get(self):
+    @auth.login_required
+    def get(self, id):
         """
         Find Shopping list by id
         """
+        shoppinglist=ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        if not shoppinglist:
+            return make_response(jsonify({"message":"Not list found"}), 404)
+        shoppig_list = {}
+        shoppig_list["name"] = shoppinglist.name
+        shoppig_list["description"]=shoppinglist.description
+        shoppig_list["date created"]=shoppinglist.created_on
+        return make_response(jsonify({"message":shoppig_list}))
 
 
 @ns.route('/items')
@@ -201,9 +210,9 @@ class Items(Resource):
         shoppinglist = ShoppingList.query.filter_by(id=shoppinglist_id).filter_by(owner_id=g.user.id).first()
         if shoppinglist:
             add_item(name=name, price=price, quantity=quantity, shoppinglist=shoppinglist, owner_id=g.user.id)
-            return jsonify({'message':'item successfully added'})
+            return make_response(jsonify({'message':'item successfully added'}), 201)
         else:
-            return jsonify({'message':'shopping not found'})
+            return make_response(jsonify({'message':'shopping list id required'}), 400)
 
     @auth.login_required
     @ns.response(404, "Item(s) Not Found")
@@ -217,12 +226,12 @@ class Items(Resource):
         shoppinglist_items = []
         for item in items:
             all_items = {}
-            all_items['name']=item.name
-            all_items['id']=item.id
-            all_items['price']=item.price
-            all_items['quantity']=item.quantity
-            all_items['shoppinglist_id']=item.shoppinglist_id
-            all_items['date created']=item.created_on
+            all_items['name'] = item.name
+            all_items['id'] = item.id
+            all_items['price'] = item.price
+            all_items['quantity'] = item.quantity
+            all_items['shoppinglist_id'] = item.shoppinglist_id
+            all_items['date created'] = item.created_on
             shoppinglist_items.append(all_items)
             return jsonify({'message':shoppinglist_items})
 
@@ -239,9 +248,9 @@ class item(Resource):
         """
         item=Item.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not item:
-            return jsonify({'message':'not item found with the provided id', 'status':404})
+            return make_response(jsonify({'message':'not item found with the provided id'}),404)
         delete_item(item)
-        return jsonify({'message':'item deleted successfully'})
+        return make_response(jsonify({'message':'item deleted successfully'}), 200)
 
 
 
