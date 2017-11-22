@@ -17,6 +17,11 @@ update_shoppinglist_parser.add_argument('name', type=str,
 update_shoppinglist_parser.add_argument('description', type=str,
                                  help='Shoppinglist description should not be blank')
 
+update_item_parser=reqparse.RequestParser()
+update_item_parser.add_argument('name', type=str, required=True, help='Item name')
+update_item_parser.add_argument('price',  required=True, help='Item price')
+update_item_parser.add_argument('quantity',  required=True, help='Item quantity')
+
 pagination_parser=reqparse.RequestParser()
 pagination_parser.add_argument('page', type='int', required=False, help='page number')
 pagination_parser.add_argument('bool', type='bool', required=False, help='page number')

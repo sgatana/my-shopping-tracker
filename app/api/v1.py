@@ -1,14 +1,15 @@
 import os
-from flask import Blueprint, jsonify,request, g, abort, make_response
+from flask import Blueprint, jsonify,request, g, make_response
 from flask_restplus import Api, Resource, marshal
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
-    add_item_model, user_model, page_of_shoppinglist
+    add_item_model, user_model, update_item_model
 from app.Api_models.users import User
 from app.Api_models.shoppinglist import ShoppingList
 from app.Api_models.item import Item
-from app.methods import register_user, add_shopping_list, add_item, delete_item, update_shopping_list
+from app.methods import register_user, add_shopping_list, add_item, delete_item, update_shopping_list, \
+    update_item
 from flask_httpauth import HTTPBasicAuth
-from app.api.parsers import item_parser, update_shoppinglist_parser, pagination_parser
+from app.api.parsers import item_parser, update_shoppinglist_parser, pagination_parser, update_item_parser
 
 
 bp = Blueprint('api',__name__)
@@ -97,12 +98,12 @@ class Login(Resource):
             if user.verify_password(user_data['password']):
                 g.user = user
                 token = g.user.generate_auth_token(config=config, expiration=600)
-                return jsonify({"token": token.decode('ascii'),
-                                "duration":600})
+                return make_response(jsonify({"token": token.decode('ascii'),
+                                "duration":600}), 200)
             else:
-                return jsonify({'message':"wrong credentials"})
+                return make_response(jsonify({'message':"wrong credentials"}),401)
         else:
-            return jsonify({'message':'user does not exist'})
+            return make_response(jsonify({'message':'user does not exist'}), 404)
 
 
 @ns.route('/ShoppingList')
@@ -118,37 +119,26 @@ class Shopping_List(Resource):
 
     @api.response(404, "ShoppingList Not Found")
     @auth.login_required
-    @ns.expect(pagination_parser)
-    @ns.marshal_with(page_of_shoppinglist)
+    # @ns.expect(pagination_parser)
+    # @ns.marshal_with(page_of_shoppinglist)
     def get(self):
         """
         Get Shopping Lists
         """
-        args = pagination_parser.parse_args(request)
-        page = args.get('page', 1)
-        limit = args.get('limit', 10)
-        shoppinglists = ShoppingList.query
-        if not shoppinglists:
-            return jsonify({'message': 'you have not crreated a shoppinglist'})
-
-        list = shoppinglists.paginate(page, limit, error_out=False)
-        return list
-
-        """
         shoppinglists = ShoppingList.query.filter_by(owner_id=g.user.id).all()
         if not shoppinglists:
-            return jsonify({'message':'you have not crreated a shoppinglist'})
-        shopping_lists=[]
+            return jsonify({'message': 'you have not crreated a shoppinglist'})
+        shopping_lists = []
         for shoppinglist in shoppinglists:
-            shopping_list={}
-            shopping_list['id']=shoppinglist.id
-            shopping_list['name']=shoppinglist.name
-            shopping_list['description']=shoppinglist.description
-            shopping_list['onwer']=shoppinglist.owner_id
-            shopping_list['date created']=shoppinglist.created_on
-            shopping_list['modified date']=shoppinglist.modified_on
+            shopping_list = {}
+            shopping_list['id'] = shoppinglist.id
+            shopping_list['name'] = shoppinglist.name
+            shopping_list['description'] = shoppinglist.description
+            shopping_list['onwer'] = shoppinglist.owner_id
+            shopping_list['date created'] = shoppinglist.created_on
+            shopping_list['modified date'] = shoppinglist.modified_on
             shopping_lists.append(shopping_list)
-        return jsonify({'Shopping List(s)':shopping_lists})"""
+        return jsonify({'Shopping List(s)': shopping_lists})
 
 
 @ns.route('/ShoppingList/<int:id>')
@@ -195,8 +185,8 @@ class UpdateshoppingList(Resource):
 
 
 @ns.route('/items')
-@ns.expect(add_item_model)
 class Items(Resource):
+    @ns.expect(add_item_model)
     @auth.login_required
     def post(self):
         """
@@ -237,16 +227,28 @@ class Items(Resource):
 
 @ns.route('/item/<int:id>')
 class item(Resource):
-    def put(self):
+    @ns.expect(update_item_model)
+    @auth.login_required
+    def put(self, id):
         """
         Update Item
         """
+        args = update_item_parser.parse_args()
+        name = args.get('name')
+        price = args.get('price'),
+        quantity = args.get('quantity')
+        new_item = Item.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        if not new_item:
+            return make_response(jsonify({'message':'item with such id does not exists'}), 404)
+        update_item(new_item, name, price, quantity)
+        return make_response(jsonify({'message':'item successfully update'}), 200)
+
     @auth.login_required
     def delete(self, id):
         """
         Delete Item
         """
-        item=Item.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        item = Item.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not item:
             return make_response(jsonify({'message':'not item found with the provided id'}),404)
         delete_item(item)
