@@ -62,3 +62,11 @@ class TestEndpoints(unittest.TestCase):
                                   }), content_type='application/json')
         print(json.loads(response.data))
         self.assertEqual(404, response.status_code)
+
+    def test_page_not_found(self):
+        response=self.client.get('/andela')
+        print(json.loads(response.data))
+        self.assertEqual(response.status_code, 404)
+
+
+
