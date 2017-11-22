@@ -47,7 +47,14 @@ def update_shopping_list(shoppinglist, name, description):
     db.session.commit()
 
 
-
+def update_item(item, name, price, quantity):
+    if name is not None:
+        item.name = name
+    if price is not None:
+        item.price = price
+    if quantity is not None:
+        item.quantity=quantity
+    db.session.commit()
 
 
 
