@@ -10,7 +10,7 @@ from app.methods import register_user, add_shopping_list, delete_item, update_sh
     update_item
 from flask_httpauth import HTTPBasicAuth
 from app.api.parsers import update_shoppinglist_parser, update_item_parser
-from app import db, app_config
+from app import db
 
 
 bp = Blueprint('api',__name__)
