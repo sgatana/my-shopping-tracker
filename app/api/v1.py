@@ -1,16 +1,16 @@
 import os, re
-from flask import Blueprint, jsonify,request, g, make_response
+from flask import Blueprint, jsonify,request, g, make_response, current_app, url_for
 from flask_restplus import Api, Resource, marshal
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
     add_item_model, user_model, update_item_model
 from app.Api_models.users import User
 from app.Api_models.shoppinglist import ShoppingList
 from app.Api_models.item import Item
-from app.methods import register_user, add_shopping_list, add_item, delete_item, update_shopping_list, \
+from app.methods import register_user, add_shopping_list, delete_item, update_shopping_list, \
     update_item
 from flask_httpauth import HTTPBasicAuth
-from app.api.parsers import item_parser, update_shoppinglist_parser, update_item_parser
-from app import db
+from app.api.parsers import update_shoppinglist_parser, update_item_parser
+from app import db, app_config
 
 
 bp = Blueprint('api',__name__)
@@ -289,26 +289,29 @@ class item(Resource):
         return make_response(jsonify({'message':'item deleted successfully'}), 200)
 
 
-@ns.route('/ShoppingList/q')
+@ns.route('/ShoppingList/list', endpoint='sh_list')
 class SearchShoppinglist(Resource):
-    def get(self, q):
+    @auth.login_required
+    def get(self):
         """
         search shoppinglist based on the provided search parameter
-        :param q:
         """
-        shoppinglists=ShoppingList.query.filter_by(ShoppingList.name.like("%"+q+"%")).filtey_by(owner_id=g.user.id).all()
-        if not shoppinglists:
-            return make_response(jsonify({'message': 'you have not created a shoppinglist'}), 404)
-        shopping_lists = []
-        for shoppinglist in shoppinglists:
-            shopping_list = {}
-            shopping_list['id'] = shoppinglist.id
-            shopping_list['name'] = shoppinglist.name
-            shopping_list['description'] = shoppinglist.description
-            # shopping_list['onwer'] = g.us
-            shopping_list['date created'] = shoppinglist.created_on
-            shopping_list['modified date'] = shoppinglist.modified_on
-            shopping_lists.append(shopping_list)
-        return make_response(jsonify({'Shopping List(s)': shopping_lists}), 200)
-
-
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
+        pagination = ShoppingList.query.filter_by(owner_id=g.user.id).paginate (
+            page, per_page=limit, error_out=False
+        )
+        shoppinglists = pagination.items
+        prev = None
+        if pagination.has_prev:
+            prev = url_for('api.sh_list', page=page-1)
+        next = None
+        if pagination.has_next:
+            next = url_for('api.sh_list', page=page+1)
+        return jsonify({
+            'shoppinglist(s)': [dict(name=shoppinglist.name, description=shoppinglist.description) for shoppinglist in \
+                              shoppinglists],
+            'prev': prev,
+            'next': next,
+            'Total': pagination.total
+        })
