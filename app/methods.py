@@ -1,4 +1,4 @@
-from flask import g
+from flask import g, jsonify
 
 from app import db
 from app.Api_models.users import User, ShoppingList
