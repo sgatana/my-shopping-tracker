@@ -1,5 +1,4 @@
 from flask_restplus import fields, Namespace
-from . import item, users, shoppinglist
 
 ns = Namespace('API', description='ShoppingList Endpoints')
 
@@ -37,7 +36,7 @@ add_item_model = ns.model('Items', {
     'name':fields.String(required=True, default="name"),
     'price':fields.String(required=True, default="price"),
     'quantity':fields.String(default="quantity"),
-    'shoppinglist_id':fields.String(default="1")
+    #'shoppinglist_id':fields.String(default="1")
 })
 
 update_item_model = ns.model('UpdateItem', {

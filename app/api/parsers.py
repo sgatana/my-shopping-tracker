@@ -27,3 +27,7 @@ pagination_parser.add_argument('page', type='int', required=False, help='page nu
 pagination_parser.add_argument('bool', type='bool', required=False, help='page number')
 pagination_parser.add_argument('limit', type='int', required=False, help='limit per page',
                                default=10)
+
+add_shopping_list = reqparse.RequestParser()
+add_shopping_list.add_argument('name', type='str', help='Name must be a string')
+add_shopping_list.add_argument('description', type=str, help='Description must be a string')
