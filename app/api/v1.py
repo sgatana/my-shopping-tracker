@@ -1,4 +1,4 @@
-import os
+import os, re
 from flask import Blueprint, jsonify,request, g, make_response
 from flask_restplus import Api, Resource, marshal
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
@@ -9,7 +9,8 @@ from app.Api_models.item import Item
 from app.methods import register_user, add_shopping_list, add_item, delete_item, update_shopping_list, \
     update_item
 from flask_httpauth import HTTPBasicAuth
-from app.api.parsers import item_parser, update_shoppinglist_parser, pagination_parser, update_item_parser
+from app.api.parsers import item_parser, update_shoppinglist_parser, update_item_parser
+from app import db
 
 
 bp = Blueprint('api',__name__)
@@ -20,24 +21,24 @@ api = Api(bp, version='1.0', title='ShoppingList  API',
 
 config=os.environ.get('FLASK_CONFIG')
 
+
 # implement error handler
 @bp.app_errorhandler(404)
 def not_found(e):
-    response = jsonify({'status': 404, 'error': 'not found', 'message': 'invalid resource url'})
-    response.status_code = 404
+    response = make_response(jsonify({'message': 'This is not the page you are looking for'}), 404)
     return response
 
 
 @auth.error_handler
 def unauthorized_access():
-    response = jsonify({'status':401, 'message':'Invalid credentials'})
+    response = make_response(jsonify({'message':'you token is not valid or has expired, please login to generate \
+    a new token'}), 401)
     return response
 
 
 @bp.app_errorhandler(500)
 def internal_server_error(e):
-    response = jsonify({'status':500, 'error':'internal server error'})
-    response.status_code=500
+    response = make_response(jsonify({'message':'internal server error'}),500)
     return response
 """
 implement verify password callback method to allow auth
@@ -58,6 +59,14 @@ def verify_password(email_or_token, password):
     return True
 
 
+def isValidEmail(email):
+    exp = '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$'
+    return re.match(exp, email)
+
+
+def validateNames(name):
+    pass
+
 
 @ns.route('/register')
 @ns.expect(register_model)
@@ -68,20 +77,29 @@ class Users(Resource):
         """
         Register a new user:
         """
-        user = request.json
-        print(user)
-        if User.query.filter_by(email=user['email']).first() is not None:
-            return make_response(jsonify({'message':'email already exist'}), 409)
+        user = request.form
+        if isValidEmail(user['email']):
 
-        register_user(user)
-        return make_response(jsonify({"message":"registration successful"}), 201)
+            if User.query.filter_by(email=user['email']).first() is not None:
+                return make_response(jsonify({'message':'email already exist'}), 409)
+            if user['username'] == '' or len(user['username'].strip()) == 0:
+                return jsonify({'message':'please enter a valid name'})
+            if user['password'] == '' or len(user['password'].strip()) == 0:
+                return jsonify({'message':'please enter a valid password'})
+            register_user(user)
+            if len(user['password'].strip()) < 6:
+                return jsonify({'message': 'Password must have at least 6 characters'})
+            return make_response(jsonify({"message": "registration successful"}), 201)
+        else:
+            return jsonify({'message':'enter a valid email address'})
 
 
 @ns.route('/user')
-class user(Resource):
+class CurrentUser(Resource):
     @auth.login_required
     def get(self):
         return marshal(g.user, user_model)
+
 
 @ns.route('/login')
 class Login(Resource):
@@ -92,18 +110,19 @@ class Login(Resource):
         """
         User Login
         """
-        user_data = request.json
+        user_data = request.form
         user = User.query.filter_by(email=user_data['email']).first()
         if user:
             if user.verify_password(user_data['password']):
                 g.user = user
+                name = user.username
                 token = g.user.generate_auth_token(config=config, expiration=600)
-                return make_response(jsonify({"token": token.decode('ascii'),
-                                "duration":600}), 200)
+                return make_response(jsonify({"Hello " +name+" your Authentication token is": token.decode('ascii')}),
+                                     200)
             else:
-                return make_response(jsonify({'message':"wrong credentials"}),401)
+                return make_response(jsonify({'message': "your email or password is incorrect"}),401)
         else:
-            return make_response(jsonify({'message':'user does not exist'}), 404)
+            return make_response(jsonify({'message': 'user with supplied email does not exist'}), 404)
 
 
 @ns.route('/ShoppingList')
@@ -114,31 +133,35 @@ class Shopping_List(Resource):
         """
         Add Shopping List
         """
-        add_shopping_list(request.json)
+        shoppinglist=request.form
+
+        shopping_list = ShoppingList.query.filter_by(name=shoppinglist['name']).filter_by(owner_id=g.user.id).first()
+        if shopping_list:
+            return make_response(jsonify({'message':'Shoppinglist Already exists'}), 409)
+        add_shopping_list(shoppinglist)
         return make_response(jsonify({'message':'shopping list add successfully'}), 201)
 
     @api.response(404, "ShoppingList Not Found")
     @auth.login_required
-    # @ns.expect(pagination_parser)
-    # @ns.marshal_with(page_of_shoppinglist)
     def get(self):
         """
         Get Shopping Lists
         """
+        owner=g.user.username
         shoppinglists = ShoppingList.query.filter_by(owner_id=g.user.id).all()
         if not shoppinglists:
-            return jsonify({'message': 'you have not crreated a shoppinglist'})
+            return make_response(jsonify({'message': 'you have not created a shoppinglist'}), 404)
         shopping_lists = []
         for shoppinglist in shoppinglists:
             shopping_list = {}
             shopping_list['id'] = shoppinglist.id
             shopping_list['name'] = shoppinglist.name
             shopping_list['description'] = shoppinglist.description
-            shopping_list['onwer'] = shoppinglist.owner_id
+            shopping_list['onwer'] = owner
             shopping_list['date created'] = shoppinglist.created_on
             shopping_list['modified date'] = shoppinglist.modified_on
             shopping_lists.append(shopping_list)
-        return jsonify({'Shopping List(s)': shopping_lists})
+        return make_response(jsonify({'Shopping List(s)': shopping_lists}), 200)
 
 
 @ns.route('/ShoppingList/<int:id>')
@@ -174,45 +197,55 @@ class UpdateshoppingList(Resource):
         """
         Find Shopping list by id
         """
+        user= g.user.username
         shoppinglist=ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not shoppinglist:
             return make_response(jsonify({"message":"Not list found"}), 404)
         shoppig_list = {}
         shoppig_list["name"] = shoppinglist.name
-        shoppig_list["description"]=shoppinglist.description
-        shoppig_list["date created"]=shoppinglist.created_on
-        return make_response(jsonify({"message":shoppig_list}))
+        shoppig_list["description"] = shoppinglist.description
+        shoppig_list["last modified"] = shoppinglist.modified_on
+        shoppig_list["owner"] = user
+        # result=our_list.append(shoppig_list)
+
+        return make_response(jsonify({"Shopping list":shoppig_list}))
 
 
-@ns.route('/items')
+@ns.route('/Shoppinglist/<int:id>/Items')
 class Items(Resource):
     @ns.expect(add_item_model)
     @auth.login_required
-    def post(self):
+    def post(self, id):
         """
-        Add a ShoppingList Item
+        Add Item To Shopping List
         """
-        args = item_parser.parse_args()
-        name = args.get('name')
-        price = args.get('price')
-        quantity = args.get('quantity')
-        shoppinglist_id = args.get('shoppinglist_id')
-        shoppinglist = ShoppingList.query.filter_by(id=shoppinglist_id).filter_by(owner_id=g.user.id).first()
-        if shoppinglist:
-            add_item(name=name, price=price, quantity=quantity, shoppinglist=shoppinglist, owner_id=g.user.id)
-            return make_response(jsonify({'message':'item successfully added'}), 201)
-        else:
-            return make_response(jsonify({'message':'shopping list id required'}), 400)
+        items=request.form
+        item_name=items['name']
+        price=items['price']
+        quantity=items['quantity']
+        # shoppinglist_id=item['shoppinglist']
+        onwer = g.user.id
+        check_item = Item.query.filter_by(name=item_name).filter_by(owner_id=onwer).first()
+        if check_item:
+            return  make_response(jsonify({'message':'Item with provided name already exist'}))
+        shoppinglistid = ShoppingList.query.filter_by(id=id).first()
+        shoppinglist_item = Item(name=item_name, price=price, quantity=quantity, shoppinglist=shoppinglistid,
+                                 owner_id=onwer)
+        db.session.add(shoppinglist_item)
+        db.session.commit()
+        if shoppinglist_item:
+            return make_response(jsonify({'message':'items added successsfully'}), 201)
+        return make_response(jsonify({'message':'item was not added'}), 404)
 
     @auth.login_required
     @ns.response(404, "Item(s) Not Found")
-    def get(self):
+    def get(self, id):
         """
         Get Shoppinglist items
         """
-        items=Item.query.filter_by(owner_id=g.user.id).all()
+        items = Item.query.filter_by(shoppinglist_id=id).filter_by(owner_id=g.user.id).all()
         if not items:
-            return jsonify({'message':'item and shopping does not exist'})
+            return jsonify({'message': 'item and shopping does not exist'})
         shoppinglist_items = []
         for item in items:
             all_items = {}
@@ -220,10 +253,11 @@ class Items(Resource):
             all_items['id'] = item.id
             all_items['price'] = item.price
             all_items['quantity'] = item.quantity
-            all_items['shoppinglist_id'] = item.shoppinglist_id
-            all_items['date created'] = item.created_on
+            # all_items['shoppinglist_id'] = item.shoppinglist_id
+            # all_items['date created'] = item.created_on
             shoppinglist_items.append(all_items)
-            return jsonify({'message':shoppinglist_items})
+        return jsonify({'message': shoppinglist_items})
+
 
 @ns.route('/item/<int:id>')
 class item(Resource):
@@ -248,12 +282,33 @@ class item(Resource):
         """
         Delete Item
         """
-        item = Item.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        item = Item.query.filter_by(id=id).first()
         if not item:
             return make_response(jsonify({'message':'not item found with the provided id'}),404)
         delete_item(item)
         return make_response(jsonify({'message':'item deleted successfully'}), 200)
 
 
+@ns.route('/ShoppingList/q')
+class SearchShoppinglist(Resource):
+    def get(self, q):
+        """
+        search shoppinglist based on the provided search parameter
+        :param q:
+        """
+        shoppinglists=ShoppingList.query.filter_by(ShoppingList.name.like("%"+q+"%")).filtey_by(owner_id=g.user.id).all()
+        if not shoppinglists:
+            return make_response(jsonify({'message': 'you have not created a shoppinglist'}), 404)
+        shopping_lists = []
+        for shoppinglist in shoppinglists:
+            shopping_list = {}
+            shopping_list['id'] = shoppinglist.id
+            shopping_list['name'] = shoppinglist.name
+            shopping_list['description'] = shoppinglist.description
+            # shopping_list['onwer'] = g.us
+            shopping_list['date created'] = shoppinglist.created_on
+            shopping_list['modified date'] = shoppinglist.modified_on
+            shopping_lists.append(shopping_list)
+        return make_response(jsonify({'Shopping List(s)': shopping_lists}), 200)
 
 
