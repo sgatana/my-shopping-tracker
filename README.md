@@ -67,15 +67,12 @@ Access the application on your browser using :
 ```
     127.0.0.1:5000
 ```
-![](.README_images/da3fc04f.png)
+
+![](.README_images/4d507463.png)
 
 ## Endpoints
 
-| URL | Method | Description | Authentication |
 
-| --- | --- | --- | --- |
-
-| /register | POST | Allow users to register to api |  FALSE |
 
 ## Deployment
 
