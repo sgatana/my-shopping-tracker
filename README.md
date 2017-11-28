@@ -67,7 +67,6 @@ Access the application on your browser using :
 ```
     127.0.0.1:5000
 ```
-![](.README_images/c2c95f56.png)
 
 
 ## Endpoints
