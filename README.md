@@ -67,10 +67,18 @@ Access the application on your browser using :
 ```
     127.0.0.1:5000
 ```
+![](.README_images/c2c95f56.png)
 
-![](.README_images/4d507463.png)
 
 ## Endpoints
+```
+/regiter
+/login
+/ShoppingList
+/ShoppingList/{id}/items
+/shoppinglist/{id}
+/item{id}
+```
 
 
 
