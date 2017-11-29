@@ -67,7 +67,8 @@ Access the application on your browser using :
 ```
     127.0.0.1:5000
 ```
-  
+
+[](https://photos.app.goo.gl/5sCtH02XcVyA4nwh1)
 
 ## Endpoints
 
