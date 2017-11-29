@@ -34,7 +34,7 @@ class BaseTest(unittest.TestCase):
         :return:
         """
         self.client.post(
-            "/v1/ShoppingList",
+            "/v1/Shoppinglist",
             data=dict(
                 name="supper",
                 description="very delicious"
