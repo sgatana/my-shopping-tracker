@@ -31,8 +31,8 @@ def not_found(e):
 
 @auth.error_handler
 def unauthorized_access():
-    response = make_response(jsonify({'message':'you token is not valid or has expired, please login to generate \
-    a new token'}), 401)
+    response = make_response(jsonify({'message':'you token is not valid or has expired, please login to generate '
+                                                'a new token'}), 401)
     return response
 
 
@@ -81,17 +81,17 @@ class Users(Resource):
         if isValidEmail(user['email']):
 
             if User.query.filter_by(email=user['email']).first() is not None:
-                return make_response(jsonify({'message':'email already exist'}), 409)
+                return make_response(jsonify({'message': 'email already exist'}), 409)
             if user['username'] == '' or len(user['username'].strip()) == 0:
-                return jsonify({'message':'please enter a valid name'})
+                return jsonify({'message': 'please enter a valid name'})
             if user['password'] == '' or len(user['password'].strip()) == 0:
-                return jsonify({'message':'please enter a valid password'})
+                return jsonify({'message': 'please enter a valid password'})
             register_user(user)
             if len(user['password'].strip()) < 6:
                 return jsonify({'message': 'Password must have at least 6 characters'})
             return make_response(jsonify({"message": "registration successful"}), 201)
         else:
-            return jsonify({'message':'enter a valid email address'})
+            return jsonify({'message': 'enter a valid email address'})
 
 
 @ns.route('/user')
@@ -125,7 +125,7 @@ class Login(Resource):
             return make_response(jsonify({'message': 'user with supplied email does not exist'}), 404)
 
 
-@ns.route('/ShoppingList')
+@ns.route('/Shoppinglist', endpoint='sh_list')
 class Shopping_List(Resource):
     @ns.expect(shoppinglist_model)
     @auth.login_required
@@ -137,34 +137,55 @@ class Shopping_List(Resource):
 
         shopping_list = ShoppingList.query.filter_by(name=shoppinglist['name']).filter_by(owner_id=g.user.id).first()
         if shopping_list:
-            return make_response(jsonify({'message':'Shoppinglist Already exists'}), 409)
+            return make_response(jsonify({'message': 'Shoppinglist Already exists'}), 409)
+        if shoppinglist['name']=='' or len(shoppinglist['name'].strip())==0:
+            return make_response(jsonify({'message': 'Name cannot be empty, please enter a valid name'}))
+        if shoppinglist['description']=='' or len(shoppinglist['description'].strip())==0:
+            return make_response(jsonify({'message': 'description cannot be empty'}))
         add_shopping_list(shoppinglist)
-        return make_response(jsonify({'message':'shopping list add successfully'}), 201)
+        return make_response(jsonify({'message': 'shopping list add successfully'}), 201)
 
     @api.response(404, "ShoppingList Not Found")
     @auth.login_required
     def get(self):
         """
-        Get Shopping Lists
+        search shoppinglist based on the provided search parameter
         """
         owner=g.user.username
-        shoppinglists = ShoppingList.query.filter_by(owner_id=g.user.id).all()
-        if not shoppinglists:
-            return make_response(jsonify({'message': 'you have not created a shoppinglist'}), 404)
-        shopping_lists = []
-        for shoppinglist in shoppinglists:
-            shopping_list = {}
-            shopping_list['id'] = shoppinglist.id
-            shopping_list['name'] = shoppinglist.name
-            shopping_list['description'] = shoppinglist.description
-            shopping_list['onwer'] = owner
-            shopping_list['date created'] = shoppinglist.created_on
-            shopping_list['modified date'] = shoppinglist.modified_on
-            shopping_lists.append(shopping_list)
-        return make_response(jsonify({'Shopping List(s)': shopping_lists}), 200)
+        q = request.args.get('q')
+        if q:
+            shopping_lists = ShoppingList.query.filter_by(owner_id=g.user.id).filter(ShoppingList.name.like
+                                                                                     ('%{0}%'.format(q)))
+        else:
+            return make_response(jsonify({'message': 'no shoppinglist found with provided parameter'}))
+        if shopping_lists:
+            page = request.args.get('page', 1, type=int)
+            limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
+            pagination = shopping_lists.paginate(
+                page, per_page=limit, error_out=False
+            )
+            shoppinglists = pagination.items
+            prev = None
+            if pagination.has_prev:
+                prev = url_for('api.sh_list', page=page - 1)
+            next = None
+            if pagination.has_next:
+                next = url_for('api.sh_list', page=page + 1)
+            if shoppinglists:
+                return jsonify({
+                    'shoppinglist(s)': [
+                        dict(name=shoppinglist.name, description=shoppinglist.description, id=shoppinglist.id,
+                             owner=owner, last_modified=shoppinglist.modified_on)
+                        for shoppinglist in shoppinglists],
+                    'prev': prev,
+                    'next': next,
+                    'Total': pagination.total
+                })
+        else:
+            return make_response(jsonify({'message': 'sorry you do not have shoppinglist'}))
 
 
-@ns.route('/ShoppingList/<int:id>')
+@ns.route('/Shoppinglist/<int:id>')
 class UpdateshoppingList(Resource):
     @auth.login_required
     @ns.expect(update_shoppinglist_model)
@@ -172,42 +193,44 @@ class UpdateshoppingList(Resource):
         """
         Update Shopping List
         """
-        args=update_shoppinglist_parser.parse_args()
-        name=args.get('name')
-        description=args.get('description')
+        args = update_shoppinglist_parser.parse_args()
+        name = args.get('name')
+        description = args.get('description')
         shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not shoppinglist:
             return make_response(jsonify({'message': 'no shopping list with the provided id'}), 404)
+        if name == '' or len(name.strip()) == 0:
+            return make_response(jsonify({'message': 'Name cannot be empty, please enter a valid name'}))
+        if description == '' or len(description.strip()) == 0:
+            return make_response(jsonify({'message': 'description cannot be empty'}))
         update_shopping_list(shoppinglist, name, description)
-        return make_response(jsonify({'message':'shopping list update successfully'}), 200)
+        return make_response(jsonify({'message': 'shopping list update successfully'}), 200)
 
     @auth.login_required
     def delete(self, id):
         """
         Delete Shopping List
         """
-        shoppinglist=ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not shoppinglist:
-            return make_response(jsonify({'message':'no shopping list with the provided id'}), 404)
+            return make_response(jsonify({'message': 'no shopping list with the provided id'}), 404)
         delete_item(shoppinglist)
-        return make_response(jsonify({'message':'shopping list deleted succssfully'}), 200)
+        return make_response(jsonify({'message': 'shopping list deleted succssfully'}), 200)
 
     @auth.login_required
     def get(self, id):
         """
         Find Shopping list by id
         """
-        user= g.user.username
-        shoppinglist=ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        user = g.user.username
+        shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not shoppinglist:
-            return make_response(jsonify({"message":"Not list found"}), 404)
+            return make_response(jsonify({"message": "Not list found"}), 404)
         shoppig_list = {}
         shoppig_list["name"] = shoppinglist.name
         shoppig_list["description"] = shoppinglist.description
         shoppig_list["last modified"] = shoppinglist.modified_on
         shoppig_list["owner"] = user
-        # result=our_list.append(shoppig_list)
-
         return make_response(jsonify({"Shopping list":shoppig_list}))
 
 
@@ -217,25 +240,25 @@ class Items(Resource):
     @auth.login_required
     def post(self, id):
         """
-        Add Item To Shopping List
+        Add Items To Shopping List
         """
         items=request.form
-        item_name=items['name']
-        price=items['price']
-        quantity=items['quantity']
-        # shoppinglist_id=item['shoppinglist']
-        onwer = g.user.id
-        check_item = Item.query.filter_by(name=item_name).filter_by(owner_id=onwer).first()
+        item_name = items.get('name')
+        price = items.get('price')
+        quantity = items.get('quantity')
+        owner = g.user.id
+        check_item = Item.query.filter_by(name=item_name).first()
         if check_item:
-            return  make_response(jsonify({'message':'Item with provided name already exist'}))
+            return make_response(jsonify({'message': 'Item with provided name already exist'}), 409)
         shoppinglistid = ShoppingList.query.filter_by(id=id).first()
         shoppinglist_item = Item(name=item_name, price=price, quantity=quantity, shoppinglist=shoppinglistid,
-                                 owner_id=onwer)
+                                 owner_id=owner)
+
         db.session.add(shoppinglist_item)
         db.session.commit()
         if shoppinglist_item:
-            return make_response(jsonify({'message':'items added successsfully'}), 201)
-        return make_response(jsonify({'message':'item was not added'}), 404)
+            return make_response(jsonify({'message': 'items added successfully'}), 201)
+        return make_response(jsonify({'message': 'item was not added'}), 404)
 
     @auth.login_required
     @ns.response(404, "Item(s) Not Found")
@@ -273,9 +296,9 @@ class item(Resource):
         quantity = args.get('quantity')
         new_item = Item.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not new_item:
-            return make_response(jsonify({'message':'item with such id does not exists'}), 404)
+            return make_response(jsonify({'message': 'item with such id does not exists'}), 404)
         update_item(new_item, name, price, quantity)
-        return make_response(jsonify({'message':'item successfully update'}), 200)
+        return make_response(jsonify({'message': 'item successfully update'}), 200)
 
     @auth.login_required
     def delete(self, id):
@@ -284,34 +307,8 @@ class item(Resource):
         """
         item = Item.query.filter_by(id=id).first()
         if not item:
-            return make_response(jsonify({'message':'not item found with the provided id'}),404)
+            return make_response(jsonify({'message': 'not item found with the provided id'}),404)
         delete_item(item)
-        return make_response(jsonify({'message':'item deleted successfully'}), 200)
+        return make_response(jsonify({'message': 'item deleted successfully'}), 200)
 
 
-@ns.route('/ShoppingList/list', endpoint='sh_list')
-class SearchShoppinglist(Resource):
-    @auth.login_required
-    def get(self):
-        """
-        search shoppinglist based on the provided search parameter
-        """
-        page = request.args.get('page', 1, type=int)
-        limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
-        pagination = ShoppingList.query.filter_by(owner_id=g.user.id).paginate (
-            page, per_page=limit, error_out=False
-        )
-        shoppinglists = pagination.items
-        prev = None
-        if pagination.has_prev:
-            prev = url_for('api.sh_list', page=page-1)
-        next = None
-        if pagination.has_next:
-            next = url_for('api.sh_list', page=page+1)
-        return jsonify({
-            'shoppinglist(s)': [dict(name=shoppinglist.name, description=shoppinglist.description) for shoppinglist in \
-                              shoppinglists],
-            'prev': prev,
-            'next': next,
-            'Total': pagination.total
-        })
