@@ -67,18 +67,35 @@ Access the application on your browser using :
 ```
     127.0.0.1:5000
 ```
-
+  
 
 ## Endpoints
-```
-/regiter
-/login
-/ShoppingList
-/ShoppingList/{id}/items
-/shoppinglist/{id}
-/item{id}
-```
 
+ | URL | Methods | Description | Authentication |
+ | ----| ---- | --- | --- |
+ | /register | POST | Allow users to register | False
+ | /login | POST | Allow registered users to login and generate token | False |
+ | /Shoppinglist | POST | Allow user to create a new shopping list | True |
+ | /Shoppinglist | GET | Allow users to get list of shopping lists | True |
+ | /user | GET | Get the current user | True |
+ | /Shoppinglist/{id} | GET | Get a shoppinglist by using unique id | True |
+ | /Shoppinglist/{id} | PUT | Update a shopping list given the id of the shopping list | True |
+ | /Shoppinglist{id} | DELETE | Delete shopping list given the unique id | True |
+ | /Shoppinglist/{id}/Items | POST | Create an item to specific shoppinglist | True |
+ | /Shoppinglist/{id}/Items | GET | GET items of specific shoppinglist | True |
+ | /item/{id} | PUT | Update an item given unique id | True |
+ | /item/{id} | GET | Get an item given unique id | True |
+ | /item/{id} | DELETE | Delete an item given unique id | True |
+
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
 
 ## Deployment
