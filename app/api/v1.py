@@ -223,7 +223,7 @@ class UpdateshoppingList(Resource):
         Find Shopping list by id
         """
         user = g.user.username
-        shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        shoppinglist = ShoppingList.query.filter_by(id=id, owner_id=g.user.id).first()
         if not shoppinglist:
             return make_response(jsonify({"message": "Not list found"}), 404)
         shoppig_list = {}
@@ -243,7 +243,9 @@ class Items(Resource):
         Add Items To Shopping List
         """
         items=request.form
+        print(items)
         item_name = items.get('name')
+        print(item_name)
         price = items.get('price')
         quantity = items.get('quantity')
         owner = g.user.id
