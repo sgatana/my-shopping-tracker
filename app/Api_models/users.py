@@ -13,16 +13,18 @@ class User(db.Model):
     username = db.Column(db.String(64))
     email = db.Column(db.String(255), unique=True, index=True)
     password = db.Column(db.String(104))
+    confirm = db.Column(db.String(104))
     shopping_lists = db.relationship(ShoppingList, backref='owner', lazy='dynamic')
     items = db.relationship(ShoppingList, backref='items_owner', lazy='dynamic')
     created_on = db.Column(db.DateTime, default=datetime.utcnow)
     date_modified = db.Column(db.DateTime, default=datetime.utcnow,
                               onupdate=datetime.utcnow)
 
-    def __init__(self, username, email, password):
+    def __init__(self, username, email, password, confirm):
         self.username = username
         self.email = email
         self.set_password(password)
+        self.confirm=password
 
     def __repr__(self):
         """
@@ -40,7 +42,7 @@ class User(db.Model):
     def verify_password(self, password):
         return check_password_hash(self.password, password)
 
-    def generate_auth_token(self, expiration=600, config=""):
+    def generate_auth_token(self, expiration=3600, config=""):
         s = Serializer(app_config[config].SECRET_KEY, expires_in=expiration)
         return s.dumps({'id': self.id})
 

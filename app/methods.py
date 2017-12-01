@@ -9,7 +9,8 @@ def register_user(user):
     username = user.get('username')
     email = user.get('email')
     password = user.get('password')
-    users = User(username, email, password)
+    confirm = user.get('confirm')
+    users = User(username, email, password, confirm)
     db.session.add(users)
     db.session.commit()
 
