@@ -13,7 +13,7 @@ class BaseTest(unittest.TestCase):
             db.create_all()
             db.session.commit()
             self.client = self.app.test_client()
-            data=dict(username="stephen", email="stephen@gmail.com", password="stephen123")
+            data=dict(username="stephen", email="stephen@gmail.com", password="stephen123", confirm="stephen123")
             self.client.post('v1/register', data=data)
 
             self.headers = {

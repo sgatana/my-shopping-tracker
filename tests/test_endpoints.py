@@ -19,11 +19,13 @@ class TestEndpoints(unittest.TestCase):
 
     def test_user_can_register(self):
         response=self.client.post('/v1/register',
-                                  data=dict(username= "steve", email= "steve@gmail.com", password="steve123"))
+                                  data=dict(username= "steve", email= "steve@gmail.com", password="steve123",
+                                            confirm="steve123"))
         self.assertEqual(201, response.status_code)
 
     def register_user(self):
-        self.client.post('/v1/register', data=dict(username= "steve", email= "steve@gmail.com", password="steve123"))
+        self.client.post('/v1/register', data=dict(username="steve", email="steve@gmail.com", password="steve123",
+                                                   confirm="steve123"))
 
     def test_only_registered_user_can_login(self):
         self.register_user()

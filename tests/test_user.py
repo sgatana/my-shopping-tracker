@@ -10,7 +10,7 @@ class UserTest(unittest.TestCase):
     db.create_all()
 
     def setUp(self):
-        self.user = User(username='steve', email='steve@gmail.com', password='steve@2017')
+        self.user = User(username='steve', email='steve@gmail.com', password='steve@2017', confirm='steve@2017')
         self.token = self.user.generate_auth_token(expiration=50, config='testing')
 
     def test_set_password_hash(self):
