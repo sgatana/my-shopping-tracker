@@ -67,7 +67,7 @@ Access the application on your browser using :
 ```
     127.0.0.1:5000
 ```
-![Octotree on GitHub](API.png)
+![](API.png)
 
 ## Endpoints
 
