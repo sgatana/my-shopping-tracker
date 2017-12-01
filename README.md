@@ -67,7 +67,7 @@ Access the application on your browser using :
 ```
     127.0.0.1:5000
 ```
-![](API.png)
+![](https://github.com/sgatana/ShoppingListAPI/blob/develop/docs/API.png)
 
 ## Endpoints
 
