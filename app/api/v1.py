@@ -86,6 +86,8 @@ class Users(Resource):
                 return jsonify({'message': 'please enter a valid name'})
             if user['password'] == '' or len(user['password'].strip()) == 0:
                 return jsonify({'message': 'please enter a valid password'})
+            if user['confirm'] != user['password']:
+                return jsonify({'message':'Your passwords did not match'})
             register_user(user)
             if len(user['password'].strip()) < 6:
                 return jsonify({'message': 'Password must have at least 6 characters'})
@@ -252,6 +254,14 @@ class Items(Resource):
         check_item = Item.query.filter_by(name=item_name).first()
         if check_item:
             return make_response(jsonify({'message': 'Item with provided name already exist'}), 409)
+        if item_name=='' or len(item_name.strip())==0:
+            return jsonify({'message': 'name cannot be empty'})
+        if price=='' or len(price.strip())==0:
+            return jsonify({'message': 'price cannot be empty'})
+        if quantity=='' or len(quantity.strip())==0:
+            return jsonify({'message': 'quantity cannot be empty'})
+        if type(price)!=int and type(quantity)!=int:
+            return jsonify({'message': 'price and quantity should not be a string'})
         shoppinglistid = ShoppingList.query.filter_by(id=id).first()
         shoppinglist_item = Item(name=item_name, price=price, quantity=quantity, shoppinglist=shoppinglistid,
                                  owner_id=owner)
