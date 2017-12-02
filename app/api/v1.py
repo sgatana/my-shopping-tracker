@@ -64,10 +64,6 @@ def isValidEmail(email):
     return re.match(exp, email)
 
 
-def validateNames(name):
-    pass
-
-
 @ns.route('/register')
 @ns.expect(register_model)
 class Users(Resource):
@@ -119,7 +115,7 @@ class Login(Resource):
                 g.user = user
                 name = user.username
                 token = g.user.generate_auth_token(config=config, expiration=600)
-                return make_response(jsonify({"Hello " +name+" your Authentication token is": token.decode('ascii')}),
+                return make_response(jsonify({"Hello " + name + " your Authentication token is": token.decode('ascii')}),
                                      200)
             else:
                 return make_response(jsonify({'message': "your email or password is incorrect"}),401)
@@ -140,9 +136,9 @@ class Shopping_List(Resource):
         shopping_list = ShoppingList.query.filter_by(name=shoppinglist['name']).filter_by(owner_id=g.user.id).first()
         if shopping_list:
             return make_response(jsonify({'message': 'Shoppinglist Already exists'}), 409)
-        if shoppinglist['name']=='' or len(shoppinglist['name'].strip())==0:
+        if shoppinglist['name'] == '' or len(shoppinglist['name'].strip()) == 0:
             return make_response(jsonify({'message': 'Name cannot be empty, please enter a valid name'}))
-        if shoppinglist['description']=='' or len(shoppinglist['description'].strip())==0:
+        if shoppinglist['description'] == '' or len(shoppinglist['description'].strip()) == 0:
             return make_response(jsonify({'message': 'description cannot be empty'}))
         add_shopping_list(shoppinglist)
         return make_response(jsonify({'message': 'shopping list add successfully'}), 201)
@@ -254,11 +250,11 @@ class Items(Resource):
         check_item = Item.query.filter_by(name=item_name).first()
         if check_item:
             return make_response(jsonify({'message': 'Item with provided name already exist'}), 409)
-        if item_name=='' or len(item_name.strip()) == 0:
+        if item_name == '' or len(item_name.strip()) == 0:
             return jsonify({'message': 'name cannot be empty'})
-        if price=='':
+        if price == '':
             return jsonify({'message': 'price cannot be empty'})
-        if quantity=='':
+        if quantity == '':
             return jsonify({'message': 'quantity cannot be empty'})
         # if type(price) == str and type(quantity) == str:
         #     return make_response(jsonify({'message': 'price and quantity should not be a string'}))
