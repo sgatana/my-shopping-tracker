@@ -24,17 +24,6 @@ def add_shopping_list(data):
     db.session.commit()
 
 
-def add_item(name, price, quantity, shoppinglist, owner_id):
-    item=Item(name=name, price=price, quantity=quantity, shoppinglist=shoppinglist, owner_id=owner_id)
-    check_item=Item.query.filter_by(name=name).filter_by(shoppinglist_id=shoppinglist.id).first()
-    if not check_item:
-        db.session.add(item)
-        db.session.commit()
-        return True
-    else:
-        return False
-
-
 def delete_item(item):
     db.session.delete(item)
     db.session.commit()
