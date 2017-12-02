@@ -254,14 +254,14 @@ class Items(Resource):
         check_item = Item.query.filter_by(name=item_name).first()
         if check_item:
             return make_response(jsonify({'message': 'Item with provided name already exist'}), 409)
-        if item_name=='' or len(item_name.strip())==0:
+        if item_name=='' or len(item_name.strip()) == 0:
             return jsonify({'message': 'name cannot be empty'})
-        if price=='' or len(price.strip())==0:
+        if price=='':
             return jsonify({'message': 'price cannot be empty'})
-        if quantity=='' or len(quantity.strip())==0:
+        if quantity=='':
             return jsonify({'message': 'quantity cannot be empty'})
-        if type(price)!=int and type(quantity)!=int:
-            return jsonify({'message': 'price and quantity should not be a string'})
+        # if type(price) == str and type(quantity) == str:
+        #     return make_response(jsonify({'message': 'price and quantity should not be a string'}))
         shoppinglistid = ShoppingList.query.filter_by(id=id).first()
         shoppinglist_item = Item(name=item_name, price=price, quantity=quantity, shoppinglist=shoppinglistid,
                                  owner_id=owner)
@@ -288,17 +288,17 @@ class Items(Resource):
             all_items['id'] = item.id
             all_items['price'] = item.price
             all_items['quantity'] = item.quantity
-            # all_items['shoppinglist_id'] = item.shoppinglist_id
+            all_items['shoppinglist_id'] = item.shoppinglist_id
             # all_items['date created'] = item.created_on
             shoppinglist_items.append(all_items)
         return jsonify({'message': shoppinglist_items})
 
 
-@ns.route('/item/<int:id>')
+@ns.route('/Shoppinglist/<int:list_id>/item/<int:id>')
 class item(Resource):
     @ns.expect(update_item_model)
     @auth.login_required
-    def put(self, id):
+    def put(self, list_id, id):
         """
         Update Item
         """
@@ -306,20 +306,21 @@ class item(Resource):
         name = args.get('name')
         price = args.get('price'),
         quantity = args.get('quantity')
-        new_item = Item.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
+        new_item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=g.user.id).first()
         if not new_item:
             return make_response(jsonify({'message': 'item with such id does not exists'}), 404)
         update_item(new_item, name, price, quantity)
         return make_response(jsonify({'message': 'item successfully update'}), 200)
 
     @auth.login_required
-    def delete(self, id):
+    def delete(self, list_id, id):
         """
         Delete Item
         """
-        item = Item.query.filter_by(id=id).first()
+
+        item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=g.user.id).first()
         if not item:
-            return make_response(jsonify({'message': 'not item found with the provided id'}),404)
+            return make_response(jsonify({'message': 'no item found with the provided id'}),404)
         delete_item(item)
         return make_response(jsonify({'message': 'item deleted successfully'}), 200)
 

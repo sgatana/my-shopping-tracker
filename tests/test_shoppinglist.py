@@ -16,14 +16,12 @@ class ShoppinglistTestcase(BaseTest):
 
     def test_get_shoppinglist(self):
         response=self.client.get('/v1/Shoppinglist', headers=self.headers)
-        print(json.loads(response.data))
         self.assertTrue(len(json.loads(response.data)))
-        print(json.loads(response.data))
 
     def test_unauthorized_users_cannot_create_shoppinglist(self):
         res = self.client.post('/v1/Shoppinglist',
                                data=dict(
-                                   name= "supper",
+                                   name="supper",
                                    description="very delicious"
                                ))
         self.assertEqual(401, res.status_code)

@@ -26,7 +26,7 @@ class TestItems(BaseTest):
                                data=dict(
                                    name="Tea",
                                    price=20,
-                                   quantity= 2
+                                   quantity=2
 
                                ))
         print(json.loads(res.data))
@@ -36,10 +36,11 @@ class TestItems(BaseTest):
     def test_user_can_delete_shoppinglist_items(self):
         self.create_shopping_lists("lunch", "delicious meal")
         self.create_items('beef', 20, 2)
-        res = self.client.delete('/v1/item/1',
+        res = self.client.delete('/v1/Shoppinglist/1/item/1',
                                  headers=self.headers)
         print(json.loads(res.data))
         self.assertEqual(200, res.status_code)
+
 
 
 

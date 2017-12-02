@@ -36,8 +36,8 @@ class BaseTest(unittest.TestCase):
         self.client.post(
             "/v1/Shoppinglist",
             data=dict(
-                name="supper",
-                description="very delicious"
+                name=name,
+                description=description
             ), headers=self.headers)
 
     def create_items(self, name, price, quantity):
@@ -50,7 +50,7 @@ class BaseTest(unittest.TestCase):
         """
         self.client.post('/v1/Shoppinglist/1/Items',
                          data=dict(
-                             name= name,
-                             price= price,
+                             name=name,
+                             price=price,
                              quantity=quantity
                          ), headers=self.headers)
