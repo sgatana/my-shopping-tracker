@@ -215,7 +215,7 @@ class UpdateshoppingList(Resource):
         """
         shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=g.user.id).first()
         if not shoppinglist:
-            return make_response(jsonify({'message': 'no shopping list with the provided id'}), 404)
+            return make_response(jsonify({'message': 'No shopping list with the provided id'}), 404)
         delete_item(shoppinglist)
         return make_response(jsonify({'message': 'shopping list deleted succssfully'}), 200)
 
@@ -227,7 +227,7 @@ class UpdateshoppingList(Resource):
         user = g.user.username
         shoppinglist = ShoppingList.query.filter_by(id=id, owner_id=g.user.id).first()
         if not shoppinglist:
-            return make_response(jsonify({"message": "Not list found"}), 404)
+            return make_response(jsonify({"message": "No Shopping list found with provided id"}), 404)
         shoppig_list = {}
         shoppig_list["name"] = shoppinglist.name
         shoppig_list["description"] = shoppinglist.description

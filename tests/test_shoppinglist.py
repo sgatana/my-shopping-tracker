@@ -35,6 +35,12 @@ class ShoppinglistTestcase(BaseTest):
                                  ), headers=self.headers)
         self.assertEqual(200, response.status_code)
 
+    def test_user_can_get_shopping_list_with_given_id(self):
+        self.create_shopping_lists("Lunch", "The best meal for the day")
+        response = self.client.get('/v1/Shoppinglist/1' ,headers=self.headers)
+        print(json.loads(response.data))
+        self.assertEqual(200, response.status_code)
+
     def test_non_existing_shoppinglist_cannot_be_updated(self):
         response = self.client.put('/v1/Shoppinglist/12',
                                    data=dict(
@@ -42,7 +48,6 @@ class ShoppinglistTestcase(BaseTest):
                                        description="very delicious"
                                    ), headers=self.headers)
         self.assertEqual(response.status_code, 404)
-
 
     def test_delete_shoppinglist(self):
         self.create_shopping_lists("Lunch", "a delicious meal")
