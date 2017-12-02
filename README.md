@@ -83,9 +83,9 @@ Access the application on your browser using :
  | /Shoppinglist{id} | DELETE | Delete shopping list given the unique id | True |
  | /Shoppinglist/{id}/Items | POST | Create an item to specific shoppinglist | True |
  | /Shoppinglist/{id}/Items | GET | GET items of specific shoppinglist | True |
- | /item/{id} | PUT | Update an item given unique id | True |
- | /item/{id} | GET | Get an item given unique id | True |
- | /item/{id} | DELETE | Delete an item given unique id | True |
+ | /Shoppinglist/{list_id}/item/{id} | PUT | Update an item given unique id | True |
+ | /Shoppinglist/{list_id}/item/{id} | GET | Get an item given unique id | True |
+ | /Shoppinglist/{list_id}/item/{id} | DELETE | Delete an item given unique id | True |
 
 
 
