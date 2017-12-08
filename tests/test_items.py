@@ -26,6 +26,8 @@ class TestItems(BaseTest):
         self.create_items('rice',60,10)
         self.create_items('maize',80,17)
         res = self.client.get('/v1/Shoppinglist/1/Items', headers=self.headers)
+        print(json.loads(res.data))
+
         self.assertEqual(200, res.status_code)
 
     def test_unregistered_user_cannot_create_shoppinglist_items(self):

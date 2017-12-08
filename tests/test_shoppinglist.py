@@ -37,7 +37,7 @@ class ShoppinglistTestcase(BaseTest):
 
     def test_user_can_get_shopping_list_with_given_id(self):
         self.create_shopping_lists("Lunch", "The best meal for the day")
-        response = self.client.get('/v1/Shoppinglist/1' ,headers=self.headers)
+        response = self.client.get('/v1/Shoppinglist/1', headers=self.headers)
         print(json.loads(response.data))
         self.assertEqual(200, response.status_code)
 

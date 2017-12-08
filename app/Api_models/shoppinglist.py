@@ -17,7 +17,7 @@ class ShoppingList(db.Model):
     def __init__(self, name, description, owner):
         self.name = name
         self.description = description
-        self.owner_id = owner.id
+        self.owner_id = owner
 
     def __repr__(self):
         """
@@ -25,3 +25,7 @@ class ShoppingList(db.Model):
          and testing purposes.
         """
         return '<Shopping list %r> <owner %r>' % self.name % self.owner_id
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()

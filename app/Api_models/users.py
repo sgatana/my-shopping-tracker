@@ -1,10 +1,12 @@
-from datetime import datetime
+import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.Api_models.shoppinglist import ShoppingList
 from itsdangerous import (TimedJSONWebSignatureSerializer
                           as Serializer, BadSignature, SignatureExpired)
-from app import app_config
+import jwt
+# from app import app_config
+from flask import current_app
 
 
 class User(db.Model):
@@ -13,18 +15,18 @@ class User(db.Model):
     username = db.Column(db.String(64))
     email = db.Column(db.String(255), unique=True, index=True)
     password = db.Column(db.String(104))
-    confirm = db.Column(db.String(104))
+    # confirm = db.Column(db.String(104))
     shopping_lists = db.relationship(ShoppingList, backref='owner', lazy='dynamic')
     items = db.relationship(ShoppingList, backref='items_owner', lazy='dynamic')
-    created_on = db.Column(db.DateTime, default=datetime.utcnow)
-    date_modified = db.Column(db.DateTime, default=datetime.utcnow,
-                              onupdate=datetime.utcnow)
+    created_on = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    date_modified = db.Column(db.DateTime, default=datetime.datetime.utcnow,
+                              onupdate=datetime.datetime.utcnow)
 
-    def __init__(self, username, email, password, confirm):
+    def __init__(self, username, email, password):
         self.username = username
         self.email = email
         self.set_password(password)
-        self.confirm=password
+        # self.set_password(confirm)
 
     def __repr__(self):
         """
@@ -42,18 +44,37 @@ class User(db.Model):
     def verify_password(self, password):
         return check_password_hash(self.password, password)
 
-    def generate_auth_token(self, expiration=3600, config=""):
-        s = Serializer(app_config[config].SECRET_KEY, expires_in=expiration)
-        return s.dumps({'id': self.id})
+    # def generate_auth_token(self, expiration=3600, config=""):
+    #     s = Serializer(app_config[config].SECRET_KEY, expires_in=expiration)
+    #     return s.dumps({'id': self.id})
+    def encode_auth_token(self, user_id):
+        """
+        Generate the auth token
+        :param user_id:
+        :return:
+        """
+        try:
+            payload = {
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
+                'iat': datetime.datetime.utcnow(),
+                'sub': user_id
+            }
+            return jwt.encode(
+                payload,
+                current_app.config.get('SECRET_KEY'),
+                algorithm='HS256'
+            )
+        except Exception as e:
+            return e
 
     @staticmethod
-    def verify_auth_token(token, config):
-        s = Serializer(app_config[config].SECRET_KEY)
+    def decode_auth_token(auth_token):
+        """Decodes the authentication token"""
+
         try:
-            data = s.loads(token)
-        except SignatureExpired:
-            return None  # valid token, but expired
-        except BadSignature:
-            return None  # invalid token
-        user = User.query.get(data['id'])
-        return user
+            payload = jwt.decode(auth_token, current_app.config.get('SECRET_KEY'))
+            return payload['sub']
+        except jwt.ExpiredSignatureError:
+            return 'Sorry your token expired, please log in again!'
+        except jwt.InvalidTokenError:
+            return 'Token invalid, please login again.'

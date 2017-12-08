@@ -15,11 +15,17 @@ class BaseTest(unittest.TestCase):
             self.client = self.app.test_client()
             data=dict(username="stephen", email="stephen@gmail.com", password="stephen123", confirm="stephen123")
             self.client.post('v1/register', data=data)
-
+            res = self.client.post('v1/login',
+                             data=dict(
+                                 email='stephen@gmail.com',
+                                 password='stephen123'
+                             ))
+            token = json.loads(res.data)["token"]
             self.headers = {
-                'Authorization': 'Basic %s' % b64encode(b"stephen@gmail.com:stephen123")
-                .decode("ascii")
+                'Authorization': 'Brearer'+" "+token
             }
+
+
 
     def tearDown(self):
         with self.app.app_context():

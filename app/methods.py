@@ -9,8 +9,8 @@ def register_user(user):
     username = user.get('username')
     email = user.get('email')
     password = user.get('password')
-    confirm = user.get('confirm')
-    users = User(username, email, password, confirm)
+    # confirm = user.get('confirm')
+    users = User(username, email, password)
     db.session.add(users)
     db.session.commit()
 
@@ -18,10 +18,9 @@ def register_user(user):
 def add_shopping_list(data):
     name = data.get('name')
     desc = data.get('description')
-    owner = g.user
-    shopping_list=ShoppingList(name, desc, owner)
-    db.session.add(shopping_list)
-    db.session.commit()
+    # owner = g.user
+    shopping_list=ShoppingList(name, desc)
+
 
 
 def delete_item(item):
