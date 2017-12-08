@@ -1,5 +1,5 @@
 import os, re
-from flask import Blueprint, jsonify,request, g, make_response, current_app, url_for
+from flask import Blueprint, jsonify, request, g, make_response, current_app, url_for
 from flask_restplus import Api, Resource, marshal
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
     add_item_model, user_model, update_item_model
@@ -12,14 +12,13 @@ from flask_httpauth import HTTPBasicAuth
 from app.api.parsers import update_shoppinglist_parser, update_item_parser
 from app import db
 
-
-bp = Blueprint('api',__name__)
-auth=HTTPBasicAuth()
+bp = Blueprint('api', __name__)
+auth = HTTPBasicAuth()
 
 api = Api(bp, version='1.0', title='ShoppingList  API',
           description='A simple ShoppingList API')
 
-config=os.environ.get('FLASK_CONFIG')
+config = os.environ.get('FLASK_CONFIG')
 
 
 # implement error handler
@@ -31,15 +30,17 @@ def not_found(e):
 
 @auth.error_handler
 def unauthorized_access():
-    response = make_response(jsonify({'message':'you token is not valid or has expired, please login to generate '
-                                                'a new token'}), 401)
+    response = make_response(jsonify({'message': 'you token is not valid or has expired, please login to generate '
+                                                 'a new token'}), 401)
     return response
 
 
 @bp.app_errorhandler(500)
 def internal_server_error(e):
-    response = make_response(jsonify({'message': 'internadbnmcvhmfl server error'}),500)
+    response = make_response(jsonify({'message': 'internadbnmcvhmfl server error'}), 500)
     return response
+
+
 """
 implement verify password callback method to allow auth
 (verify if user is logged in)
@@ -77,7 +78,7 @@ class Users(Resource):
             if user['password'] == '' or len(user['password'].strip()) == 0:
                 return jsonify({'message': 'Your password should not be empty'})
             if user['confirm'] != user['password']:
-                return jsonify({'message':'Your passwords did not match'})
+                return jsonify({'message': 'Your passwords did not match'})
             if len(user['password'].strip()) < 6:
                 return jsonify({'message': 'Password must have at least 6 characters'})
             register_user(user)
@@ -129,9 +130,9 @@ class Login(Resource):
             if user.verify_password(user_data['password']):
                 g.user = user
                 name = user.username
-                token =user.encode_auth_token(user.id)
+                token = user.encode_auth_token(user.id)
                 print(token)
-                return make_response(jsonify({"message":f'hello {name}', "token": token.decode()}),
+                return make_response(jsonify({"message": f'hello {name}', "token": token.decode()}),
                                      200)
             else:
                 return make_response(jsonify({'message': "your email or password is incorrect"}), 401)
@@ -146,7 +147,7 @@ class Shopping_List(Resource):
         """
         Add Shopping List
         """
-        shoppinglist=request.form
+        shoppinglist = request.form
 
         auth_header = request.headers.get('Authorization')
         if not auth_header:
@@ -167,7 +168,8 @@ class Shopping_List(Resource):
                     return make_response(jsonify({'message': 'Name cannot be empty, please enter a valid name'}))
                 if shoppinglist['description'] == '' or len(shoppinglist['description'].strip()) == 0:
                     return make_response(jsonify({'message': 'description cannot be empty'}))
-                my_list=ShoppingList(name=shoppinglist['name'], description=shoppinglist['description'], owner=user_id)
+                my_list = ShoppingList(name=shoppinglist['name'], description=shoppinglist['description'],
+                                       owner=user_id)
                 ShoppingList.save(my_list)
 
                 return make_response(jsonify({'message': 'shopping list add successfully'}), 201)
@@ -192,32 +194,31 @@ class Shopping_List(Resource):
             if not isinstance(user_id, str):
                 q = request.args.get('q')
                 if q:
-                    shopping_lists = ShoppingList.query.filter(ShoppingList.name.like ('%'+q+'%')).filter_by \
+                    shopping_lists = ShoppingList.query.filter(ShoppingList.name.like('%' + q + '%')).filter_by \
                         (owner_id=user_id)
-                    if shopping_lists:
-                        page = request.args.get('page', 1, type=int)
-                        limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
-                        pagination = shopping_lists.paginate(
-                            page, per_page=limit, error_out=False
-                        )
-                        shoppinglists = pagination.items
-                        prev = None
-                        if pagination.has_prev:
-                            prev = url_for('api.sh_list', page=page - 1)
-                        next = None
-                        if pagination.has_next:
-                            next = url_for('api.sh_list', page=page + 1)
-                        if shoppinglists:
-                            return jsonify({
-                                'shoppinglist(s)': [
-                                    dict(name=shoppinglist.name, description=shoppinglist.description,
-                                         id=shoppinglist.id,
-                                         owner=user_id, last_modified=shoppinglist.modified_on)
-                                    for shoppinglist in shoppinglists],
-                                'prev': prev,
-                                'next': next,
-                                'Total': pagination.total
-                            })
+                    page = request.args.get('page', 1, type=int)
+                    limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
+                    pagination = shopping_lists.paginate(
+                        page, per_page=limit, error_out=False
+                    )
+                    shoppinglists = pagination.items
+                    prev = None
+                    if pagination.has_prev:
+                        prev = url_for('api.sh_list', page=page - 1)
+                    next = None
+                    if pagination.has_next:
+                        next = url_for('api.sh_list', page=page + 1)
+                    if shoppinglists:
+                        return jsonify({
+                            'shoppinglist(s)': [
+                                dict(name=shoppinglist.name, description=shoppinglist.description,
+                                     id=shoppinglist.id,
+                                     owner=user_id, last_modified=shoppinglist.modified_on)
+                                for shoppinglist in shoppinglists],
+                            'prev': prev,
+                            'next': next,
+                            'Total': pagination.total
+                        })
                     return make_response(jsonify({'message': 'no shoppinglist found'}))
                 else:
                     shopping_lists = ShoppingList.query.filter_by(owner_id=user_id)
@@ -249,7 +250,7 @@ class Shopping_List(Resource):
                     # return make_response(jsonify({'message': 'no shoppinglist found with provided parameter'}))
 
             else:
-              return make_response(jsonify({'message': 'your token is invalid'}), 401)
+                return make_response(jsonify({'message': 'your token is invalid'}), 401)
 
 
 @ns.route('/Shoppinglist/<int:id>')
@@ -333,7 +334,7 @@ class UpdateshoppingList(Resource):
                 shoppig_list["description"] = shoppinglist.description
                 shoppig_list["last modified"] = shoppinglist.modified_on
                 shoppig_list["owner"] = user
-                return make_response(jsonify({"Shopping list":shoppig_list}))
+                return make_response(jsonify({"Shopping list": shoppig_list}))
 
 
 @ns.route('/Shoppinglist/<int:id>/Items')
@@ -466,8 +467,6 @@ class item(Resource):
             if not isinstance(user_id, str):
                 item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 if not item:
-                    return make_response(jsonify({'message': 'no item found with the provided id'}),404)
+                    return make_response(jsonify({'message': 'no item found with the provided id'}), 404)
                 delete_item(item)
                 return make_response(jsonify({'message': 'item deleted successfully'}), 200)
-
-

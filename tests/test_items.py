@@ -7,6 +7,7 @@ class TestItems(BaseTest):
     """
     items testcase
     """
+
     def test_user_can_create_items(self):
         self.create_shopping_lists('supper', 'eat a light meal')
         res = self.client.post('/v1/Shoppinglist/1/Items',
@@ -15,16 +16,16 @@ class TestItems(BaseTest):
                                    price=20,
                                    quantity=2
 
-                                 ), headers=self.headers)
+                               ), headers=self.headers)
         print(json.loads(res.data))
 
         self.assertEqual(201, res.status_code)
 
-    def test_user_can_get_shoppijglist_item(self):
+    def test_user_can_get_shoppinglist_item(self):
         self.create_shopping_lists('grocery', 'dry grains at affordable price')
-        self.create_items('beans',45,5)
-        self.create_items('rice',60,10)
-        self.create_items('maize',80,17)
+        self.create_items('beans', 45, 5)
+        self.create_items('rice', 60, 10)
+        self.create_items('maize', 80, 17)
         res = self.client.get('/v1/Shoppinglist/1/Items', headers=self.headers)
         print(json.loads(res.data))
 
@@ -63,7 +64,3 @@ class TestItems(BaseTest):
                               headers=self.headers)
         print(json.loads(res.data))
         self.assertEqual(200, res.status_code)
-
-
-
-

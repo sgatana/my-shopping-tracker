@@ -21,10 +21,10 @@ shoppinglist_model = ns.model('ShoppingList', {
 })
 
 user_model = ns.model('Model', {
-    'id':fields.Integer(default='your id'),
+    'id': fields.Integer(default='your id'),
     'username': fields.String(default="username"),
     'email': fields.String(default="user@example.com"),
-    'created_on':fields.DateTime
+    'created_on': fields.DateTime
 })
 
 update_shoppinglist_model = ns.model('UpdateShoppingList', {
@@ -33,16 +33,14 @@ update_shoppinglist_model = ns.model('UpdateShoppingList', {
 })
 
 add_item_model = ns.model('Items', {
-    'name':fields.String(required=True, default="name"),
-    'price':fields.String(required=True, default="price"),
-    'quantity':fields.String(default="quantity"),
-    #'shoppinglist_id':fields.String(default="1")
+    'name': fields.String(required=True, default="name"),
+    'price': fields.String(required=True, default="price"),
+    'quantity': fields.String(default="quantity"),
+    # 'shoppinglist_id':fields.String(default="1")
 })
 
 update_item_model = ns.model('UpdateItem', {
-    "name":fields.String(default="updated item name"),
-    "price":fields.String(default="updated item price"),
-    "quantity":fields.String(default="updated quantity")
+    "name": fields.String(default="updated item name"),
+    "price": fields.String(default="updated item price"),
+    "quantity": fields.String(default="updated quantity")
 })
-
-

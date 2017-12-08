@@ -6,6 +6,7 @@ class ShoppinglistTestcase(BaseTest):
     """
     this class represents shoppinglist testcase
     """
+
     def test_shoppinglist_creation(self):
         response = self.client.post('/v1/Shoppinglist',
                                     data=dict(
@@ -15,7 +16,7 @@ class ShoppinglistTestcase(BaseTest):
         self.assertEqual(201, response.status_code)
 
     def test_get_shoppinglist(self):
-        response=self.client.get('/v1/Shoppinglist', headers=self.headers)
+        response = self.client.get('/v1/Shoppinglist', headers=self.headers)
         self.assertTrue(len(json.loads(response.data)))
 
     def test_unauthorized_users_cannot_create_shoppinglist(self):
@@ -28,11 +29,11 @@ class ShoppinglistTestcase(BaseTest):
 
     def test_Update_shoppinglist(self):
         self.create_shopping_lists("Lunch", "The best meal for the day")
-        response=self.client.put('/v1/Shoppinglist/1',
-                                 data=dict(
-                                     name="supper",
-                                     description="very delicious"
-                                 ), headers=self.headers)
+        response = self.client.put('/v1/Shoppinglist/1',
+                                   data=dict(
+                                       name="supper",
+                                       description="very delicious"
+                                   ), headers=self.headers)
         self.assertEqual(200, response.status_code)
 
     def test_user_can_get_shopping_list_with_given_id(self):
@@ -51,9 +52,5 @@ class ShoppinglistTestcase(BaseTest):
 
     def test_delete_shoppinglist(self):
         self.create_shopping_lists("Lunch", "a delicious meal")
-        res=self.client.delete('/v1/Shoppinglist/1', content_type='application/json', headers=self.headers)
+        res = self.client.delete('/v1/Shoppinglist/1', content_type='application/json', headers=self.headers)
         self.assertEqual(200, res.status_code)
-
-
-
-
