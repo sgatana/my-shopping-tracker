@@ -89,9 +89,29 @@ class Users(Resource):
 
 @ns.route('/user')
 class CurrentUser(Resource):
-    @auth.login_required
     def get(self):
-        return marshal(g.user, user_model)
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return make_response(jsonify({'message': 'You hav not provided an authorization token'}), 401)
+
+        else:
+            token = auth_header.split(" ")[1]
+            if not token:
+                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
+
+        if token:
+            user_id = User.decode_auth_token(token)
+            if not isinstance(user_id, str):
+                user = User.query.filter_by(id=user_id).all()
+                if user:
+                    details = {
+                        'name': user.username,
+                        'date create': user.created_on,
+                        'email': user.email
+                    }
+                return make_response(jsonify({'user': details}))
+            else:
+                make_response(jsonify({'message': 'User does not exists'}))
 
 
 @ns.route('/login')
@@ -111,7 +131,7 @@ class Login(Resource):
                 name = user.username
                 token =user.encode_auth_token(user.id)
                 print(token)
-                return make_response(jsonify({"message":"hello f'{name}","token": token.decode()}),
+                return make_response(jsonify({"message":f'hello {name}', "token": token.decode()}),
                                      200)
             else:
                 return make_response(jsonify({'message': "your email or password is incorrect"}), 401)
@@ -172,7 +192,7 @@ class Shopping_List(Resource):
             if not isinstance(user_id, str):
                 q = request.args.get('q')
                 if q:
-                    shopping_lists = ShoppingList.query.filter(ShoppingList.name.like ('%{0}%'.format(q))).filter_by \
+                    shopping_lists = ShoppingList.query.filter(ShoppingList.name.like ('%'+q+'%')).filter_by \
                         (owner_id=user_id)
                     if shopping_lists:
                         page = request.args.get('page', 1, type=int)
@@ -200,11 +220,36 @@ class Shopping_List(Resource):
                             })
                     return make_response(jsonify({'message': 'no shoppinglist found'}))
                 else:
-                    return make_response(jsonify({'message': 'no shoppinglist found with provided parameter'}))
+                    shopping_lists = ShoppingList.query.filter_by(owner_id=user_id)
+                    if shopping_lists:
+                        page = request.args.get('page', 1, type=int)
+                        limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
+                        pagination = shopping_lists.paginate(
+                            page, per_page=limit, error_out=False
+                        )
+                        shoppinglists = pagination.items
+                        prev = None
+                        if pagination.has_prev:
+                            prev = url_for('api.sh_list', page=page - 1)
+                        next = None
+                        if pagination.has_next:
+                            next = url_for('api.sh_list', page=page + 1)
+                        if shoppinglists:
+                            return jsonify({
+                                'shoppinglist(s)': [
+                                    dict(name=shoppinglist.name, description=shoppinglist.description,
+                                         id=shoppinglist.id,
+                                         owner=user_id, last_modified=shoppinglist.modified_on)
+                                    for shoppinglist in shoppinglists],
+                                'prev': prev,
+                                'next': next,
+                                'Total': pagination.total
+                            })
+                    return make_response(jsonify({'message': 'no shoppinglist found'}))
+                    # return make_response(jsonify({'message': 'no shoppinglist found with provided parameter'}))
 
             else:
               return make_response(jsonify({'message': 'your token is invalid'}), 401)
-
 
 
 @ns.route('/Shoppinglist/<int:id>')
@@ -311,10 +356,8 @@ class Items(Resource):
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
 
-                items=request.form
-                print(items)
+                items = request.form
                 item_name = items.get('name')
-                print(item_name)
                 price = items.get('price')
                 quantity = items.get('quantity')
                 owner = user_id
@@ -327,6 +370,8 @@ class Items(Resource):
                     return jsonify({'message': 'price cannot be empty'})
                 if quantity == '':
                     return jsonify({'message': 'quantity cannot be empty'})
+                if [field for field in (price, quantity) if re.search("[^0-9.]+", field)]:
+                    return make_response(jsonify({'message': 'price and quantity should not be a string'}))
                 # if type(price) == str and type(quantity) == str:
                 #     return make_response(jsonify({'message': 'price and quantity should not be a string'}))
                 shoppinglistid = ShoppingList.query.filter_by(id=id).first()
@@ -419,8 +464,6 @@ class item(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
-
-
                 item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 if not item:
                     return make_response(jsonify({'message': 'no item found with the provided id'}),404)

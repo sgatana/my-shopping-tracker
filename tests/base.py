@@ -20,9 +20,10 @@ class BaseTest(unittest.TestCase):
                                  email='stephen@gmail.com',
                                  password='stephen123'
                              ))
+            print(res.data)
             token = json.loads(res.data)["token"]
             self.headers = {
-                'Authorization': 'Brearer'+" "+token
+                'Authorization': 'Bearer'+" "+token
             }
 
 
