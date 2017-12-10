@@ -8,12 +8,10 @@ from app.Api_models.shoppinglist import ShoppingList
 from app.Api_models.item import Item
 from app.methods import register_user, add_shopping_list, delete_item, update_shopping_list, \
     update_item
-from flask_httpauth import HTTPBasicAuth
 from app.api.parsers import update_shoppinglist_parser, update_item_parser
 from app import db
 
 bp = Blueprint('api', __name__)
-auth = HTTPBasicAuth()
 
 api = Api(bp, version='1.0', title='ShoppingList  API',
           description='A simple ShoppingList API')
@@ -25,13 +23,6 @@ config = os.environ.get('FLASK_CONFIG')
 @bp.app_errorhandler(404)
 def not_found(e):
     response = make_response(jsonify({'message': 'This is not the page you are looking for'}), 404)
-    return response
-
-
-@auth.error_handler
-def unauthorized_access():
-    response = make_response(jsonify({'message': 'you token is not valid or has expired, please login to generate '
-                                                 'a new token'}), 401)
     return response
 
 

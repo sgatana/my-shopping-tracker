@@ -2,10 +2,7 @@ import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from app.Api_models.shoppinglist import ShoppingList
-from itsdangerous import (TimedJSONWebSignatureSerializer
-                          as Serializer, BadSignature, SignatureExpired)
 import jwt
-# from app import app_config
 from flask import current_app
 
 
@@ -15,7 +12,6 @@ class User(db.Model):
     username = db.Column(db.String(64))
     email = db.Column(db.String(255), unique=True, index=True)
     password = db.Column(db.String(104))
-    # confirm = db.Column(db.String(104))
     shopping_lists = db.relationship(ShoppingList, backref='owner', lazy='dynamic')
     items = db.relationship(ShoppingList, backref='items_owner', lazy='dynamic')
     created_on = db.Column(db.DateTime, default=datetime.datetime.utcnow)
@@ -26,7 +22,6 @@ class User(db.Model):
         self.username = username
         self.email = email
         self.set_password(password)
-        # self.set_password(confirm)
 
     def __repr__(self):
         """

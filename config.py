@@ -25,7 +25,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     """Configurations for Testing, with a separate test database."""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI=os.environ.get('TESTDB')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TESTDB')
 
 
 class ProductionConfig(Config):

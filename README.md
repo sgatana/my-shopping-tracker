@@ -27,7 +27,7 @@ Once you have cloned the project, navigate to the directory and install the requ
 
 ```
     $ cd ShoppingListAPI
-    $ pip install -r requirequirements.txt
+    $ pip install -r requirements.txt
 ```
 ## Database Setup
 Create the database for the API project, for this project we are using postgresql database.
