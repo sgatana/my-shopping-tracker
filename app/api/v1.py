@@ -6,7 +6,7 @@ from app.Api_models import ns, register_model, login_model, shoppinglist_model, 
 from app.Api_models.users import User
 from app.Api_models.shoppinglist import ShoppingList
 from app.Api_models.item import Item
-from app.methods import register_user, add_shopping_list, delete_item, update_shopping_list, \
+from app.methods import register_user, delete_item, update_shopping_list, \
     update_item
 from app.api.parsers import update_shoppinglist_parser, update_item_parser
 from app import db
@@ -238,7 +238,6 @@ class Shopping_List(Resource):
                                 'Total': pagination.total
                             })
                     return make_response(jsonify({'message': 'no shoppinglist found'}))
-                    # return make_response(jsonify({'message': 'no shoppinglist found with provided parameter'}))
 
             else:
                 return make_response(jsonify({'message': 'your token is invalid'}), 401)
@@ -353,7 +352,7 @@ class Items(Resource):
                 price = items.get('price')
                 quantity = items.get('quantity')
                 owner = user_id
-                check_item = Item.query.filter_by(name=item_name).first()
+                check_item = Item.query.filter_by(name=item_name, owner_id=owner).first()
                 if check_item:
                     return make_response(jsonify({'message': 'Item with provided name already exist'}), 409)
                 if item_name == '' or len(item_name.strip()) == 0:
@@ -364,8 +363,6 @@ class Items(Resource):
                     return jsonify({'message': 'quantity cannot be empty'})
                 if [field for field in (price, quantity) if re.search("[^0-9.]+", field)]:
                     return make_response(jsonify({'message': 'price and quantity should not be a string'}))
-                # if type(price) == str and type(quantity) == str:
-                #     return make_response(jsonify({'message': 'price and quantity should not be a string'}))
                 shoppinglistid = ShoppingList.query.filter_by(id=id).first()
                 shoppinglist_item = Item(name=item_name, price=price, quantity=quantity, shoppinglist=shoppinglistid,
                                          owner_id=owner)
@@ -437,6 +434,12 @@ class item(Resource):
                 new_item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 if not new_item:
                     return make_response(jsonify({'message': 'item with such id does not exists'}), 404)
+                if name == '' or len(name.split()) == 0:
+                    return make_response(jsonify({'message': 'name cannot be empty'}))
+                if price == '':
+                    return make_response(jsonify({'message': 'price cannot be empty'}))
+                if quantity == '':
+                    return make_response(jsonify({'message': 'quantity cannot be empty'}))
                 update_item(new_item, name, price, quantity)
                 return make_response(jsonify({'message': 'item successfully update'}), 200)
 

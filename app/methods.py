@@ -1,26 +1,12 @@
-from flask import g, jsonify
-
 from app import db
-from app.Api_models.users import User, ShoppingList
-from app.Api_models.item import Item
-
-
+from app.Api_models.users import User
 def register_user(user):
     username = user.get('username')
     email = user.get('email')
     password = user.get('password')
-    # confirm = user.get('confirm')
     users = User(username, email, password)
     db.session.add(users)
     db.session.commit()
-
-
-def add_shopping_list(data):
-    name = data.get('name')
-    desc = data.get('description')
-    # owner = g.user
-    shopping_list=ShoppingList(name, desc)
-
 
 
 def delete_item(item):
