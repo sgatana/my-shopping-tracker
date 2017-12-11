@@ -4,6 +4,7 @@ from app import db
 from app.Api_models.shoppinglist import ShoppingList
 import jwt
 from flask import current_app
+from app.Api_models.logout import BlacklistToken
 
 
 class User(db.Model):
@@ -39,9 +40,6 @@ class User(db.Model):
     def verify_password(self, password):
         return check_password_hash(self.password, password)
 
-    # def generate_auth_token(self, expiration=3600, config=""):
-    #     s = Serializer(app_config[config].SECRET_KEY, expires_in=expiration)
-    #     return s.dumps({'id': self.id})
     def encode_auth_token(self, user_id):
         """
         Generate the auth token
@@ -68,8 +66,14 @@ class User(db.Model):
 
         try:
             payload = jwt.decode(auth_token, current_app.config.get('SECRET_KEY'))
-            return payload['sub']
+            is_blacklisted_token = BlacklistToken.check_blacklist(auth_token)
+            if is_blacklisted_token:
+                return 'token is blacklisted. Please try again'
+            else:
+                return payload['sub']
         except jwt.ExpiredSignatureError:
             return 'Sorry your token expired, please log in again!'
         except jwt.InvalidTokenError:
             return 'Token invalid, please login again.'
+
+

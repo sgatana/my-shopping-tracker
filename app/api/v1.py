@@ -1,9 +1,10 @@
 import os, re
 from flask import Blueprint, jsonify, request, g, make_response, current_app, url_for
-from flask_restplus import Api, Resource, marshal
+from flask_restplus import Api, Resource
 from app.Api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
-    add_item_model, user_model, update_item_model
+    add_item_model, update_item_model
 from app.Api_models.users import User
+from app.Api_models.logout import BlacklistToken
 from app.Api_models.shoppinglist import ShoppingList
 from app.Api_models.item import Item
 from app.methods import register_user, delete_item, update_shopping_list, \
@@ -172,6 +173,7 @@ class Shopping_List(Resource):
         """
         # Get the auth token
         auth_header = request.headers.get('Authorization')
+
         if not auth_header:
             return make_response(jsonify({'message': 'You hav not provided an authorization token'}), 401)
 
@@ -251,8 +253,9 @@ class UpdateshoppingList(Resource):
         Update Shopping List
         """
         auth_header = request.headers.get('Authorization')
+
         if not auth_header:
-            return make_response(jsonify({'message': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'message': 'You hav not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -274,6 +277,9 @@ class UpdateshoppingList(Resource):
                     return make_response(jsonify({'message': 'description cannot be empty'}))
                 update_shopping_list(shoppinglist, name, description)
                 return make_response(jsonify({'message': 'shopping list update successfully'}), 200)
+            else:
+                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+
 
     def delete(self, id):
         """
@@ -297,14 +303,18 @@ class UpdateshoppingList(Resource):
                     return make_response(jsonify({'message': 'No shopping list with the provided id'}), 404)
                 delete_item(shoppinglist)
                 return make_response(jsonify({'message': 'shopping list deleted succssfully'}), 200)
+            else:
+                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+
 
     def get(self, id):
         """
         Find Shopping list by id
         """
         auth_header = request.headers.get('Authorization')
+
         if not auth_header:
-            return make_response(jsonify({'message': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'message': 'You hav not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -314,7 +324,6 @@ class UpdateshoppingList(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
-
                 user = user_id
                 shoppinglist = ShoppingList.query.filter_by(id=id, owner_id=user_id).first()
                 if not shoppinglist:
@@ -325,6 +334,9 @@ class UpdateshoppingList(Resource):
                 shoppig_list["last modified"] = shoppinglist.modified_on
                 shoppig_list["owner"] = user
                 return make_response(jsonify({"Shopping list": shoppig_list}))
+            else:
+                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+
 
 
 @ns.route('/Shoppinglist/<int:id>/Items')
@@ -372,6 +384,9 @@ class Items(Resource):
                 if shoppinglist_item:
                     return make_response(jsonify({'message': 'items added successfully'}), 201)
                 return make_response(jsonify({'message': 'item was not added'}), 404)
+            else:
+                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+
 
     @ns.response(404, "Item(s) Not Found")
     def get(self, id):
@@ -405,6 +420,8 @@ class Items(Resource):
                     # all_items['date created'] = item.created_on
                     shoppinglist_items.append(all_items)
                 return jsonify({'message': shoppinglist_items})
+            else:
+                return make_response(jsonify({'message': 'your token is invalid'}), 401)
 
 
 @ns.route('/Shoppinglist/<int:list_id>/item/<int:id>')
@@ -442,6 +459,8 @@ class item(Resource):
                     return make_response(jsonify({'message': 'quantity cannot be empty'}))
                 update_item(new_item, name, price, quantity)
                 return make_response(jsonify({'message': 'item successfully update'}), 200)
+            else:
+                return make_response(jsonify({'message': 'your token is invalid'}), 401)
 
     def delete(self, list_id, id):
         """
@@ -464,3 +483,37 @@ class item(Resource):
                     return make_response(jsonify({'message': 'no item found with the provided id'}), 404)
                 delete_item(item)
                 return make_response(jsonify({'message': 'item deleted successfully'}), 200)
+            else:
+                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+
+
+@ns.route('/logout')
+class Logout(Resource):
+    def post(self):
+        # get token
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return make_response(jsonify({'message': 'You have not provided an authorization token'}), 401)
+
+        else:
+            token = auth_header.split(" ")[1]
+            if not token:
+                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
+
+        if token:
+            user_id = User.decode_auth_token(token)
+            if not isinstance(user_id, str):
+                # mark the token as blacklisted
+                blacklist_token = BlacklistToken(token=token)
+                try:
+                    # insert the token
+                    db.session.add(blacklist_token)
+                    db.session.commit()
+                    return make_response(jsonify({'message': 'you have successfully logout'}),200)
+                except Exception as e:
+                    return make_response(jsonify({'message': 'failed to logout, try again'}), 200)
+            else:
+                return make_response(jsonify({'message': 'failed to logout, try again'}),400)
+
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}))

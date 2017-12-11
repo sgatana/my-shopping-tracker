@@ -1,5 +1,4 @@
 import unittest
-from base64 import b64encode
 from flask import json
 from app import create_app, db
 
