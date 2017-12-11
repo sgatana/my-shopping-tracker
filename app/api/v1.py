@@ -440,7 +440,8 @@ class Items(Resource):
 
                 items = Item.query.filter_by(shoppinglist_id=id).filter_by(owner_id=user_id).all()
                 if not items:
-                    return make_response(jsonify({'message': 'Shopping list with provided id does not exist'}),404 )
+                    return make_response(jsonify({'message': 'Shopping list with provided id does not contain items'}),
+                                         404 )
                 shoppinglist_items = []
                 for item in items:
                     all_items = {}
@@ -456,6 +457,31 @@ class Items(Resource):
                 return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
         else:
             return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
+
+    def delete(self, id):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return make_response(jsonify({'message': 'You have not provided an authorization token'}), 401)
+
+        else:
+            token = auth_header.split(" ")[1]
+            if not token:
+                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
+
+        if token:
+            user_id = User.decode_auth_token(token)
+            if not isinstance(user_id, str):
+
+                shoppinglist = Item.query.filter_by(shoppinglist_id=id, owner_id=user_id).delete()
+                if not shoppinglist:
+                    return make_response(jsonify({'message': 'No item(s) found'}), 404)
+                db.session.commit()
+                return make_response(jsonify({'message': 'items deleted succssfully from the shopping list'}), 200)
+            else:
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
+
 
 
 @ns.route('/Shoppinglist/<int:list_id>/item/<int:id>')

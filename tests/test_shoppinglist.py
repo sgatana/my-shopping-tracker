@@ -16,8 +16,15 @@ class ShoppinglistTestcase(BaseTest):
         self.assertEqual(201, response.status_code)
 
     def test_get_shoppinglist(self):
+        self.create_shopping_lists('supper', 'delicious')
         response = self.client.get('/v1/Shoppinglist', headers=self.headers)
-        self.assertTrue(len(json.loads(response.data)))
+        self.assertEqual(response.status_code, 200)
+
+    def test_delete_all_shopping_lists(self):
+        self.create_shopping_lists('supper', 'delicious meal')
+        response = self.client.delete('/v1/Shoppinglist', headers=self.headers)
+
+        self.assertEqual(response.status_code, 200)
 
     def test_unauthorized_users_cannot_create_shoppinglist(self):
         res = self.client.post('/v1/Shoppinglist',
@@ -52,5 +59,5 @@ class ShoppinglistTestcase(BaseTest):
 
     def test_delete_shoppinglist(self):
         self.create_shopping_lists("Lunch", "a delicious meal")
-        res = self.client.delete('/v1/Shoppinglist/1', content_type='application/json', headers=self.headers)
+        res = self.client.delete('/v1/Shoppinglist/1', headers=self.headers)
         self.assertEqual(200, res.status_code)
