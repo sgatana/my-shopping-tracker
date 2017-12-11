@@ -14,10 +14,10 @@ class Item(db.Model):
     modified_on = db.Column(db.DateTime(), default=datetime.utcnow,
                             onupdate=datetime.utcnow)
 
-    def __init__(self, name, price, quantity, shoppinglist, owner_id):
+    def __init__(self, name, price, quantity, shoppinglist_id, owner_id):
         self.name = name
         self.price = price
         self.quantity = quantity
-        self.shoppinglist_id = shoppinglist.id
+        self.shoppinglist_id = shoppinglist_id
         self.owner_id = owner_id
 

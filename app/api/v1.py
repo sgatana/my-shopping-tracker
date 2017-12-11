@@ -27,21 +27,31 @@ def not_found(e):
     return response
 
 
-@bp.app_errorhandler(500)
-def internal_server_error(e):
-    response = make_response(jsonify({'message': 'internadbnmcvhmfl server error'}), 500)
+@bp.app_errorhandler(405)
+def not_allowed(e):
+    response = make_response(jsonify({'message': 'This is request method is not allowed for this endpoint'}), 405)
     return response
 
 
-"""
-implement verify password callback method to allow auth
-(verify if user is logged in)
-"""
+@bp.app_errorhandler(500)
+def internal_server_error(e):
+    response = make_response(jsonify({'message': 'Your application cannot communicate with the server'}), 500)
+    return response
 
 
 def isValidEmail(email):
     exp = '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$'
     return re.match(exp, email)
+
+
+def ValidateStrInputs(str):
+   exp = "^[A-Za-z0-9]*$"
+   return re.match(exp, str)
+
+
+def password_validator(password):
+    reg_pass = '^(?=\S{6,}$)(?=.*?\d)(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[^A-Za-z\s0-9])'
+    return re.match(reg_pass, password)
 
 
 @ns.route('/register')
@@ -65,19 +75,20 @@ class Users(Resource):
         if isValidEmail(user['email']):
             if User.query.filter_by(email=user['email']).first() is not None:
                 return make_response(jsonify({'message': 'email already exist'}), 409)
-            if user['username'] == '' or len(user['username'].strip()) == 0:
-                return jsonify({'message': 'please enter a valid name'})
-            if user['password'] == '' or len(user['password'].strip()) == 0:
-                return jsonify({'message': 'Your password should not be empty'})
+            if not ValidateStrInputs(user['username']):
+                return make_response(jsonify({'message': 'please enter a valid name, empty and special characters not '
+                                                         'allowed'}),401)
+            if not password_validator(user['password']):
+                return make_response(jsonify({'message': 'password should have a min length is 6, at least include a '
+                                                         'digit number, uppercase and a lowercase letter and a special'
+                                                         'characters'}),401)
             if user['confirm'] != user['password']:
-                return jsonify({'message': 'Your passwords did not match'})
-            if len(user['password'].strip()) < 6:
-                return jsonify({'message': 'Password must have at least 6 characters'})
+                return make_response(jsonify({'message': 'Your passwords did not match'}),401)
             register_user(user)
 
             return make_response(jsonify({"message": "registration successful"}), 201)
         else:
-            return jsonify({'message': 'enter a valid email address'})
+            return make_response(jsonify({'message': 'enter a valid email address'}),401)
 
 
 @ns.route('/user')
@@ -89,22 +100,25 @@ class CurrentUser(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
-            user_id = User.decode_auth_token(token)
-            if not isinstance(user_id, str):
-                user = User.query.filter_by(id=user_id).all()
-                if user:
+            try:
+                user_id = User.decode_auth_token(token)
+                if not isinstance(user_id, str):
+                    user = User.query.filter_by(id=user_id).first()
                     details = {
                         'name': user.username,
                         'date create': user.created_on,
                         'email': user.email
                     }
-                return make_response(jsonify({'user': details}))
-            else:
-                make_response(jsonify({'message': 'User does not exists'}))
+                    return make_response(jsonify({'user': details}), 200)
+
+
+                else:
+                    return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+            except Exception as e:
+                return make_response(jsonify({'message': 'Failed to load user details'}), 404)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
 
 @ns.route('/login')
@@ -121,10 +135,9 @@ class Login(Resource):
         if user:
             if user.verify_password(user_data['password']):
                 g.user = user
-                name = user.username
                 token = user.encode_auth_token(user.id)
                 print(token)
-                return make_response(jsonify({"message": f'hello {name}', "token": token.decode()}),
+                return make_response(jsonify({"message": 'you have successfully logged in', "token": token.decode()}),
                                      200)
             else:
                 return make_response(jsonify({'message': "your email or password is incorrect"}), 401)
@@ -147,16 +160,13 @@ class Shopping_List(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
                 shopping_list = ShoppingList.query.filter_by(name=shoppinglist['name'], owner_id=user_id).first()
                 if shopping_list:
                     return make_response(jsonify({'message': 'Shoppinglist Already exists'}), 409)
-                if shoppinglist['name'] == '' or len(shoppinglist['name'].strip()) == 0:
+                if not ValidateStrInputs(shoppinglist['name']):
                     return make_response(jsonify({'message': 'Name cannot be empty, please enter a valid name'}))
                 if shoppinglist['description'] == '' or len(shoppinglist['description'].strip()) == 0:
                     return make_response(jsonify({'message': 'description cannot be empty'}))
@@ -165,6 +175,11 @@ class Shopping_List(Resource):
                 ShoppingList.save(my_list)
 
                 return make_response(jsonify({'message': 'shopping list add successfully'}), 201)
+
+            else:
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
     @api.response(404, "ShoppingList Not Found")
     def get(self):
@@ -179,9 +194,6 @@ class Shopping_List(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
@@ -239,10 +251,36 @@ class Shopping_List(Resource):
                                 'next': next,
                                 'Total': pagination.total
                             })
-                    return make_response(jsonify({'message': 'no shoppinglist found'}))
+                    return make_response(jsonify({'message': 'no shopping list(s) found'}))
 
             else:
-                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+                return make_response(jsonify({'message': 'your token is invalid, please log in '}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
+
+    def delete(self):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return make_response(jsonify({'message': 'You have not provided an authorization token'}), 401)
+
+        else:
+            token = auth_header.split(" ")[1]
+            if not token:
+                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
+
+        if token:
+            user_id = User.decode_auth_token(token)
+            if not isinstance(user_id, str):
+
+                shoppinglist = ShoppingList.query.filter_by(owner_id=user_id).delete()
+                if not shoppinglist:
+                    return make_response(jsonify({'message': 'No shopping list(s) found'}), 404)
+                db.session.commit()
+                return make_response(jsonify({'message': 'shopping list deleted succssfully'}), 200)
+            else:
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
 
 @ns.route('/Shoppinglist/<int:id>')
@@ -259,9 +297,6 @@ class UpdateshoppingList(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
@@ -278,8 +313,9 @@ class UpdateshoppingList(Resource):
                 update_shopping_list(shoppinglist, name, description)
                 return make_response(jsonify({'message': 'shopping list update successfully'}), 200)
             else:
-                return make_response(jsonify({'message': 'your token is invalid'}), 401)
-
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
     def delete(self, id):
         """
@@ -291,8 +327,6 @@ class UpdateshoppingList(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
 
         if token:
             user_id = User.decode_auth_token(token)
@@ -304,8 +338,9 @@ class UpdateshoppingList(Resource):
                 delete_item(shoppinglist)
                 return make_response(jsonify({'message': 'shopping list deleted succssfully'}), 200)
             else:
-                return make_response(jsonify({'message': 'your token is invalid'}), 401)
-
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
     def get(self, id):
         """
@@ -318,9 +353,6 @@ class UpdateshoppingList(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
@@ -336,6 +368,8 @@ class UpdateshoppingList(Resource):
                 return make_response(jsonify({"Shopping list": shoppig_list}))
             else:
                 return make_response(jsonify({'message': 'your token is invalid'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
 
 
@@ -352,9 +386,6 @@ class Items(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
@@ -364,6 +395,9 @@ class Items(Resource):
                 price = items.get('price')
                 quantity = items.get('quantity')
                 owner = user_id
+                shoppinglistid = ShoppingList.query.filter_by(id=id).first()
+                if not shoppinglistid:
+                    return make_response(jsonify({'message': 'Shopping list with provided id does not exist'}),404 )
                 check_item = Item.query.filter_by(name=item_name, owner_id=owner).first()
                 if check_item:
                     return make_response(jsonify({'message': 'Item with provided name already exist'}), 409)
@@ -375,8 +409,8 @@ class Items(Resource):
                     return jsonify({'message': 'quantity cannot be empty'})
                 if [field for field in (price, quantity) if re.search("[^0-9.]+", field)]:
                     return make_response(jsonify({'message': 'price and quantity should not be a string'}))
-                shoppinglistid = ShoppingList.query.filter_by(id=id).first()
-                shoppinglist_item = Item(name=item_name, price=price, quantity=quantity, shoppinglist=shoppinglistid,
+
+                shoppinglist_item = Item(name=item_name, price=price, quantity=quantity, shoppinglist_id=shoppinglistid.id,
                                          owner_id=owner)
 
                 db.session.add(shoppinglist_item)
@@ -385,8 +419,9 @@ class Items(Resource):
                     return make_response(jsonify({'message': 'items added successfully'}), 201)
                 return make_response(jsonify({'message': 'item was not added'}), 404)
             else:
-                return make_response(jsonify({'message': 'your token is invalid'}), 401)
-
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
     @ns.response(404, "Item(s) Not Found")
     def get(self, id):
@@ -399,16 +434,13 @@ class Items(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
 
                 items = Item.query.filter_by(shoppinglist_id=id).filter_by(owner_id=user_id).all()
                 if not items:
-                    return jsonify({'message': 'item and shopping does not exist'})
+                    return make_response(jsonify({'message': 'Shopping list with provided id does not exist'}),404 )
                 shoppinglist_items = []
                 for item in items:
                     all_items = {}
@@ -421,7 +453,9 @@ class Items(Resource):
                     shoppinglist_items.append(all_items)
                 return jsonify({'message': shoppinglist_items})
             else:
-                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
 
 @ns.route('/Shoppinglist/<int:list_id>/item/<int:id>')
@@ -437,9 +471,6 @@ class item(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
@@ -460,7 +491,9 @@ class item(Resource):
                 update_item(new_item, name, price, quantity)
                 return make_response(jsonify({'message': 'item successfully update'}), 200)
             else:
-                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
     def delete(self, list_id, id):
         """
@@ -472,9 +505,6 @@ class item(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
@@ -484,7 +514,9 @@ class item(Resource):
                 delete_item(item)
                 return make_response(jsonify({'message': 'item deleted successfully'}), 200)
             else:
-                return make_response(jsonify({'message': 'your token is invalid'}), 401)
+                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+        else:
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
 
 
 @ns.route('/logout')
@@ -497,9 +529,6 @@ class Logout(Resource):
 
         else:
             token = auth_header.split(" ")[1]
-            if not token:
-                return make_response(jsonify({'message': 'Your token is invalid'}), 401)
-
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
@@ -516,4 +545,4 @@ class Logout(Resource):
                 return make_response(jsonify({'message': 'failed to logout, try again'}),400)
 
         else:
-            return make_response(jsonify({'message': 'Please provide a valid token'}))
+            return make_response(jsonify({'message': 'Please provide a valid token'}), 403)
