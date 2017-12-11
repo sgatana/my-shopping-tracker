@@ -47,6 +47,22 @@ class TestEndpoints(unittest.TestCase):
         print(json.loads(response.data))
         self.assertEqual(401, response.status_code)
 
+    def test_user_can_logout(self):
+        self.register_user()
+        res = self.client.post('v1/login',
+                               data=dict(
+                                   email='steve@gmail.com',
+                                   password='Steve@123'
+                               ))
+        print(res.data)
+        token = json.loads(res.data)["token"]
+        self.headers = {
+            'Authorization': 'Bearer' + " " + token
+        }
+        response = self.client.post('/v1/logout',
+                                    headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
     def test_non_registered_user_cannot_login(self):
         response = self.client.post('/v1/login',
                                     data=dict(
