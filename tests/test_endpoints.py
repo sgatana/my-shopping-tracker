@@ -54,13 +54,14 @@ class TestEndpoints(unittest.TestCase):
                                    email='steve@gmail.com',
                                    password='Steve@123'
                                ))
-        print(res.data)
+
         token = json.loads(res.data)["token"]
         self.headers = {
             'Authorization': 'Bearer' + " " + token
         }
         response = self.client.post('/v1/logout',
                                     headers=self.headers)
+        print(response.data)
         self.assertEqual(response.status_code, 200)
 
     def test_non_registered_user_cannot_login(self):
@@ -76,3 +77,20 @@ class TestEndpoints(unittest.TestCase):
         response = self.client.get('/andela')
         print(json.loads(response.data))
         self.assertEqual(response.status_code, 404)
+
+    def test_user_can_load_profile_details(self):
+        self.register_user()
+        res = self.client.post('v1/login',
+                               data=dict(
+                                   email='steve@gmail.com',
+                                   password='Steve@123'
+                               ))
+        token = json.loads(res.data)["token"]
+        self.headers = {
+            'Authorization': 'Bearer' + " " + token
+        }
+        response = self.client.get('/v1/user',
+                                    headers=self.headers)
+        print(response.data)
+
+        self.assertEqual(response.status_code, 200)
