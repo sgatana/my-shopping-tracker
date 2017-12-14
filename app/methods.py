@@ -15,20 +15,15 @@ def delete_item(item):
 
 
 def update_shopping_list(shoppinglist, name, description):
-    if description is not None:
-        shoppinglist.description = description
-    if name is not None:
-        shoppinglist.name = name
+    shoppinglist.description = description
+    shoppinglist.name = name
     db.session.commit()
 
 
 def update_item(item, name, price, quantity):
-    if name is not None:
-        item.name = name
-    if price is not None:
-        item.price = price
-    if quantity is not None:
-        item.quantity=quantity
+    item.name = name
+    item.price = price
+    item.quantity=quantity
     db.session.commit()
 
 

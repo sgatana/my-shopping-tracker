@@ -7,6 +7,7 @@ from app.Api_models.users import User
 from app.Api_models.logout import BlacklistToken
 from app.Api_models.shoppinglist import ShoppingList
 from app.Api_models.item import Item
+from app.validators import isValidEmail, validate_names, password_validator, validate_username, validate_quantity
 from app.methods import register_user, delete_item, update_shopping_list, \
     update_item
 from app.api.parsers import update_shoppinglist_parser, update_item_parser
@@ -39,21 +40,6 @@ def internal_server_error(e):
     return response
 
 
-def isValidEmail(email):
-    exp = '^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$'
-    return re.match(exp, email)
-
-
-def ValidateStrInputs(str):
-   exp = "^[A-Za-z0-9]*$"
-   return re.match(exp, str)
-
-
-def password_validator(password):
-    reg_pass = '^(?=\S{6,}$)(?=.*?\d)(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[^A-Za-z\s0-9])'
-    return re.match(reg_pass, password)
-
-
 @ns.route('/register')
 @ns.expect(register_model)
 class Users(Resource):
@@ -75,13 +61,13 @@ class Users(Resource):
         if isValidEmail(user['email']):
             if User.query.filter_by(email=user['email']).first() is not None:
                 return make_response(jsonify({'message': 'email already exist'}), 409)
-            if not ValidateStrInputs(user['username']):
+            if not validate_username(user['username']):
                 return make_response(jsonify({'message': 'please enter a valid name, empty and special characters not '
                                                          'allowed'}),401)
             if not password_validator(user['password']):
-                return make_response(jsonify({'message': 'password should have a min length is 6, at least include a '
-                                                         'digit number, uppercase and a lowercase letter and a special'
-                                                         'characters'}),401)
+                error = ['should have a min length is 6', 'should have at least include a digit number',
+                         'should have an uppercase and a lowercase letter', 'should contain and a special characters']
+                return make_response(jsonify({'message':{'password': error}}),401)
             if user['confirm'] != user['password']:
                 return make_response(jsonify({'message': 'Your passwords did not match'}),401)
             register_user(user)
@@ -166,8 +152,8 @@ class Shopping_List(Resource):
                 shopping_list = ShoppingList.query.filter_by(name=shoppinglist['name'], owner_id=user_id).first()
                 if shopping_list:
                     return make_response(jsonify({'message': 'Shoppinglist Already exists'}), 409)
-                if not ValidateStrInputs(shoppinglist['name']):
-                    return make_response(jsonify({'message': 'Name cannot be empty, please enter a valid name'}))
+                if not validate_names(shoppinglist['name']):
+                    return make_response(jsonify({'message': 'Please enter a valid name'}))
                 if shoppinglist['description'] == '' or len(shoppinglist['description'].strip()) == 0:
                     return make_response(jsonify({'message': 'description cannot be empty'}))
                 my_list = ShoppingList(name=shoppinglist['name'], description=shoppinglist['description'],
@@ -276,7 +262,7 @@ class Shopping_List(Resource):
                 if not shoppinglist:
                     return make_response(jsonify({'message': 'No shopping list(s) found'}), 404)
                 db.session.commit()
-                return make_response(jsonify({'message': 'shopping list deleted succssfully'}), 200)
+                return make_response(jsonify({'message': 'shopping list(s) deleted succssfully'}), 200)
             else:
                 return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
         else:
@@ -303,15 +289,34 @@ class UpdateshoppingList(Resource):
                 args = update_shoppinglist_parser.parse_args()
                 name = args.get('name')
                 description = args.get('description')
+                # check if shopping list name already exist
+                list_name = ShoppingList.query.filter_by(name=name, owner_id=user_id).first()
+                if list_name:
+                    return make_response(jsonify({'message': 'shopping list with similar name exists'}), 409)
+
                 shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=user_id).first()
                 if not shoppinglist:
                     return make_response(jsonify({'message': 'no shopping list with the provided id'}), 404)
-                if name == '' or len(name.strip()) == 0:
-                    return make_response(jsonify({'message': 'Name cannot be empty, please enter a valid name'}))
-                if description == '' or len(description.strip()) == 0:
-                    return make_response(jsonify({'message': 'description cannot be empty'}))
-                update_shopping_list(shoppinglist, name, description)
-                return make_response(jsonify({'message': 'shopping list update successfully'}), 200)
+                # check if the name is provided
+                if name == '' and description == '':
+                    return make_response(jsonify({'message': 'No changes made on the shopping list'}))
+                elif name != '' and description == '':
+                    if not validate_names(name):
+                        return make_response(jsonify({'message': 'please enter a valid name'}),403)
+                    shoppinglist.name = name
+                    db.session.commit()
+                    return make_response(jsonify({'message': 'shopping list updated successfully'}), 200)
+                elif description != '' and name == '':
+                    if not validate_names(description):
+                        return make_response(jsonify({'message': 'please provide a valid description'}), 403)
+                    shoppinglist.description = description
+                    db.session.commit()
+                    return make_response(jsonify({'message': 'shopping list updated successfully'}), 200)
+                else:
+                    if not validate_names(name) and not validate_names(description):
+                        return make_response(jsonify({'message': 'please enter valid name and description'}))
+                    update_shopping_list(shoppinglist, name, description)
+                    return make_response(jsonify({'message': 'shopping list updated successfully'}), 200)
             else:
                 return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
         else:
@@ -397,18 +402,16 @@ class Items(Resource):
                 owner = user_id
                 shoppinglistid = ShoppingList.query.filter_by(id=id).first()
                 if not shoppinglistid:
-                    return make_response(jsonify({'message': 'Shopping list with provided id does not exist'}),404 )
+                    return make_response(jsonify({'message': 'Shopping list with provided id does not exist'}),404)
                 check_item = Item.query.filter_by(name=item_name, owner_id=owner).first()
                 if check_item:
                     return make_response(jsonify({'message': 'Item with provided name already exist'}), 409)
-                if item_name == '' or len(item_name.strip()) == 0:
-                    return jsonify({'message': 'name cannot be empty'})
-                if price == '':
-                    return jsonify({'message': 'price cannot be empty'})
-                if quantity == '':
-                    return jsonify({'message': 'quantity cannot be empty'})
-                if [field for field in (price, quantity) if re.search("[^0-9.]+", field)]:
-                    return make_response(jsonify({'message': 'price and quantity should not be a string'}))
+                if not validate_names(item_name):
+                    return jsonify({'message': 'Please enter a valid Item name'})
+                if [field for field in (price) if not re.match("^[0-9.]+$", field)]:
+                    return make_response(jsonify({'message': 'Please enter valid value for  price'}), 403)
+                if not validate_quantity(quantity):
+                    return make_response(jsonify({'message': 'Please provide a valid value for Quantity'}), 403)
 
                 shoppinglist_item = Item(name=item_name, price=price, quantity=quantity, shoppinglist_id=shoppinglistid.id,
                                          owner_id=owner)
@@ -450,7 +453,6 @@ class Items(Resource):
                     all_items['price'] = item.price
                     all_items['quantity'] = item.quantity
                     all_items['shoppinglist_id'] = item.shoppinglist_id
-                    # all_items['date created'] = item.created_on
                     shoppinglist_items.append(all_items)
                 return jsonify({'message': shoppinglist_items})
             else:
@@ -475,7 +477,7 @@ class Items(Resource):
                 shoppinglist = Item.query.filter_by(shoppinglist_id=id, owner_id=user_id).delete()
                 if not shoppinglist:
                     return make_response(jsonify({'message': 'No item(s) found'}), 404)
-                db.session.commit()
+                # db.session.commit()
                 return make_response(jsonify({'message': 'items deleted succssfully from the shopping list'}), 200)
             else:
                 return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
@@ -505,15 +507,19 @@ class item(Resource):
                 name = args.get('name')
                 price = args.get('price'),
                 quantity = args.get('quantity')
+                check_item = Item.query.filter_by(name=name, owner_id=user_id).first()
+                if check_item:
+                    return make_response(jsonify({'message': 'Item with provided name already exist'}), 409)
                 new_item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 if not new_item:
                     return make_response(jsonify({'message': 'item with such id does not exists'}), 404)
-                if name == '' or len(name.split()) == 0:
-                    return make_response(jsonify({'message': 'name cannot be empty'}))
-                if price == '':
-                    return make_response(jsonify({'message': 'price cannot be empty'}))
-                if quantity == '':
-                    return make_response(jsonify({'message': 'quantity cannot be empty'}))
+
+                if not validate_names(name):
+                    return jsonify({'message': 'Please enter a valid Item name'})
+                if [field for field in price if not re.match("^[0-9.]+$", field)]:
+                    return make_response(jsonify({'message': 'Please enter valid value for  price'}), 403)
+                if not validate_quantity(quantity):
+                    return make_response(jsonify({'message': 'Please provide a valid value for Quantity'}))
                 update_item(new_item, name, price, quantity)
                 return make_response(jsonify({'message': 'item successfully update'}), 200)
             else:
