@@ -513,9 +513,11 @@ class item(Resource):
                 new_item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 if not new_item:
                     return make_response(jsonify({'message': 'item with such id does not exists'}), 404)
+                if name == '' and price == '' and quantity == '':
+                    return make_response(jsonify({'message': 'No changes were made'}), 200)
 
                 if not validate_names(name):
-                    return jsonify({'message': 'Please enter a valid Item name'})
+                    return make_response(jsonify({'message': 'Please enter a valid Item name'}), 403)
                 if [field for field in price if not re.match("^[0-9.]+$", field)]:
                     return make_response(jsonify({'message': 'Please enter valid value for  price'}), 403)
                 if not validate_quantity(quantity):
