@@ -1,5 +1,5 @@
 from app import db
-from app.Api_models.users import User
+from app.api_models.users import User
 def register_user(user):
     username = user.get('username')
     email = user.get('email')
@@ -20,10 +20,11 @@ def update_shopping_list(shoppinglist, name, description):
     db.session.commit()
 
 
-def update_item(item, name, price, quantity):
+def update_item(item, name, price, quantity, unit):
     item.name = name
     item.price = price
     item.quantity=quantity
+    item.unit=unit
     db.session.commit()
 
 
