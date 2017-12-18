@@ -445,7 +445,7 @@ class Items(Resource):
                 if check_item:
                     return make_response(jsonify({'error': 'Item with provided name already exist'}), 409)
                 if not validate_names(item_name):
-                    return jsonify({'failed': 'Please enter a valid Item name'})
+                    return make_response(jsonify({'failed': 'Please enter a valid Item name'}), 403)
                 if [field for field in (price, quantity) if not re.match("^[0-9.]+$", field)]:
                     return make_response(jsonify({'failed': 'Please enter valid value for  price and quantity'}), 403)
                 if not validate_names(unit):
