@@ -1,20 +1,20 @@
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
-from app.Api_models.shoppinglist import ShoppingList
+from app.api_models.shoppinglist import ShoppingList
 import jwt
 from flask import current_app
-from app.Api_models.logout import BlacklistToken
+from app.api_models.logout import BlacklistToken
 
 
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64))
-    email = db.Column(db.String(255), unique=True, index=True)
+    email = db.Column(db.String(104), unique=True, index=True)
     password = db.Column(db.String(104))
-    shopping_lists = db.relationship(ShoppingList, backref='owner', lazy='dynamic')
-    items = db.relationship(ShoppingList, backref='items_owner', lazy='dynamic')
+    shopping_lists = db.relationship('ShoppingList', backref='owner', lazy='dynamic')
+    items = db.relationship('ShoppingList', backref='items_owner', lazy='dynamic')
     created_on = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     date_modified = db.Column(db.DateTime, default=datetime.datetime.utcnow,
                               onupdate=datetime.datetime.utcnow)
@@ -29,7 +29,7 @@ class User(db.Model):
          string representation that can be used for debugging
          and testing purposes.
         """
-        return '<User %r>' % self.email
+        return '<User %s>' % self.email
 
     def set_password(self, password):
         """
