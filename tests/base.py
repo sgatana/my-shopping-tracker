@@ -4,10 +4,14 @@ from app import create_app, db
 
 
 class BaseTest(unittest.TestCase):
+    """
+    use base test class to define create shopping list and items methods
+    """
     config = 'testing'
     app = create_app(config)
 
     def setUp(self):
+        # set up the app_context
         with self.app.app_context():
             db.create_all()
             db.session.commit()
