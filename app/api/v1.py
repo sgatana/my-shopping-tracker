@@ -1,4 +1,5 @@
 import os, re
+from sqlalchemy import func
 from flask import Blueprint, jsonify, request, g, make_response, current_app, url_for
 from flask_restplus import Api, Resource
 from app.api_models import ns, register_model, login_model, shoppinglist_model, update_shoppinglist_model, \
@@ -25,18 +26,6 @@ config = os.environ.get('FLASK_CONFIG')
 @bp.app_errorhandler(404)
 def not_found(e):
     response = make_response(jsonify({'message': 'This is not the page you are looking for'}), 404)
-    return response
-
-
-@bp.app_errorhandler(405)
-def not_allowed(e):
-    response = make_response(jsonify({'message': 'This is request method is not allowed for this endpoint'}), 405)
-    return response
-
-
-@bp.app_errorhandler(500)
-def internal_server_error(e):
-    response = make_response(jsonify({'message': 'Your application cannot communicate with the server'}), 500)
     return response
 
 
@@ -101,6 +90,7 @@ class CurrentUser(Resource):
             try:
                 user_id = User.decode_auth_token(token)
                 if not isinstance(user_id, str):
+                    # get user details
                     user = User.query.filter_by(id=user_id).first()
                     details = {
                         'name': user.username,
@@ -170,7 +160,8 @@ class Shopping_List(Resource):
                 if none:
                     return make_response(jsonify({'error': none}), 403)
                 #  check if shopping list already exists
-                shopping_list = ShoppingList.query.filter_by(name=shoppinglist['name'], owner_id=user_id).first()
+                shopping_list = ShoppingList.query.filter(func.lower(ShoppingList.name)==func.lower
+                (shoppinglist['name'])).filter_by(owner_id=user_id).first()
                 if shopping_list:
                     return make_response(jsonify({'error': 'Shopping list already exists'}), 409)
 
@@ -206,6 +197,7 @@ class Shopping_List(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+                # get items using search parameter
                 q = request.args.get('q')
                 if q:
                     shopping_lists = ShoppingList.query.filter(ShoppingList.name.like('%' + q + '%')).filter_by \
@@ -223,6 +215,8 @@ class Shopping_List(Resource):
                     if pagination.has_next:
                         next = url_for('api.sh_list', page=page + 1)
                     if shoppinglists:
+
+                        # display items
                         return make_response(jsonify({
                             'shopping list(s)': [
                                 dict(name=shoppinglist.name, description=shoppinglist.description,
@@ -236,6 +230,7 @@ class Shopping_List(Resource):
                     return make_response(jsonify({'error': 'you have not created shopping list(s) yet'}), 404)
 
                 else:
+                    # display all items without supplying search parameter
                     shopping_lists = ShoppingList.query.filter_by(owner_id=user_id)
                     if shopping_lists:
                         page = request.args.get('page', 1, type=int)
@@ -243,6 +238,8 @@ class Shopping_List(Resource):
                         pagination = shopping_lists.paginate(
                             page, per_page=limit, error_out=False
                         )
+
+                        # paginate shopping lists
                         shoppinglists = pagination.items
                         prev = None
                         if pagination.has_prev:
@@ -284,6 +281,7 @@ class Shopping_List(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+
                 # delete all shopping lists
                 shoppinglist = ShoppingList.query.filter_by(owner_id=user_id).all()
                 if not shoppinglist:
@@ -318,13 +316,15 @@ class UpdateshoppingList(Resource):
                 args = update_shoppinglist_parser.parse_args()
                 name = args.get('name')
                 description = args.get('description')
+
                 # check if all fields are provided
                 if not (name and description):
                     return make_response(jsonify({"error": "Please make sure name and description fields are not "
                                                            "missing"}), 403)
 
                 # check if shopping list name already exist
-                list_name = ShoppingList.query.filter_by(name=name, owner_id=user_id).first()
+                list_name = ShoppingList.query.filter(func.lower(ShoppingList.name)==func.lower(name)).\
+                    filter_by(owner_id=user_id).first()
                 if list_name:
                     return make_response(jsonify({'failed': 'shopping list with similar name exists'}), 409)
 
@@ -341,6 +341,8 @@ class UpdateshoppingList(Resource):
                     shoppinglist.name = name
                     db.session.commit()
                     return make_response(jsonify({'message': 'shopping list updated successfully'}), 200)
+
+                # validate shopping list fields
                 elif description != '' and name == '':
                     if not validate_names(description):
                         return make_response(jsonify({'error': 'please provide a valid description'}), 403)
@@ -370,6 +372,7 @@ class UpdateshoppingList(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+
                 # delete shopping list using and id
                 shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=user_id).first()
                 if not shoppinglist:
@@ -395,6 +398,8 @@ class UpdateshoppingList(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+
+                # get a single shopping list
                 user = user_id
                 shoppinglist = ShoppingList.query.filter_by(id=id, owner_id=user_id).first()
                 if not shoppinglist:
@@ -434,14 +439,16 @@ class Items(Resource):
                 quantity = items.get('quantity')
                 unit = items.get('unit')
                 owner = user_id
+
                 # check if all fields are provided
                 if not(item_name and price and quantity and unit):
                     return make_response(jsonify({'error': 'there are missing fields'}), 403)
+
                 # check if the shoping list exists
                 shoppinglistid = ShoppingList.query.filter_by(id=id).first()
                 if not shoppinglistid:
                     return make_response(jsonify({'error': 'Shopping list with provided id does not exist'}),403)
-                check_item = Item.query.filter_by(name=item_name, owner_id=owner).first()
+                check_item = Item.query.filter(func.lower(Item.name)==item_name).filter_by(owner_id=owner).first()
                 if check_item:
                     return make_response(jsonify({'error': 'Item with provided name already exist'}), 409)
                 if not validate_names(item_name):
@@ -478,6 +485,7 @@ class Items(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+
                 # get all the items belonging to a specific shopping list
                 items = Item.query.filter_by(shoppinglist_id=id).filter_by(owner_id=user_id).all()
                 if not items:
@@ -492,6 +500,7 @@ class Items(Resource):
                     all_items['quantity'] = item.quantity
                     all_items['unit'] = item.unit
                     all_items['shoppinglist_id'] = item.shoppinglist_id
+
                     # get all items
                     shoppinglist_items.append(all_items)
                 return make_response(jsonify({'shopping list items': shoppinglist_items}), 200)
@@ -518,6 +527,7 @@ class Items(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+
                 # delete all items belonging to a specific shopping list
                 shoppinglist = Item.query.filter_by(shoppinglist_id=id, owner_id=user_id).all()
                 if not shoppinglist:
@@ -553,13 +563,16 @@ class item(Resource):
                 price = args.get('price'),
                 quantity = args.get('quantity')
                 unit = args.get('unit')
-                check_item = Item.query.filter_by(name=name, owner_id=user_id).first()
+                check_item = Item.query.filter(func.lower(Item.name)==func.lower(name)).filter_by(owner_id=user_id).\
+                    first()
                 if check_item:
                     return make_response(jsonify({'error': 'Item with provided name already exist'}), 409)
+
                 # update an item
                 new_item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 if not new_item:
                     return make_response(jsonify({'error': 'item with such id does not exists'}), 403)
+
                 # validate item's fields
                 if name == '' and price == '' and quantity == '' and unit == '':
                     return make_response(jsonify({'message': 'No changes were made'}), 200)
@@ -592,6 +605,7 @@ class item(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+
                 # check if item exist in a database
                 item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 if not item:
@@ -619,6 +633,7 @@ class item(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+
                 # check if item exists in the database
                 item = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 if not item:
@@ -653,9 +668,11 @@ class Logout(Resource):
         if token:
             user_id = User.decode_auth_token(token)
             if not isinstance(user_id, str):
+
                 # mark the token as blacklisted
                 blacklist_token = BlacklistToken(token=token)
                 try:
+
                     # insert the token to blacklist table
                     db.session.add(blacklist_token)
                     db.session.commit()
