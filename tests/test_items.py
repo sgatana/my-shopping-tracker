@@ -17,7 +17,6 @@ class TestItems(BaseTest):
                                    quantity=2
 
                                ), headers=self.headers)
-        print(json.loads(res.data))
 
         self.assertEqual(201, res.status_code)
 
@@ -27,7 +26,6 @@ class TestItems(BaseTest):
         self.create_items('rice', 60, 10)
         self.create_items('maize', 80, 17)
         res = self.client.get('/v1/Shoppinglist/1/Items', headers=self.headers)
-        print(json.loads(res.data))
 
         self.assertEqual(200, res.status_code)
 
@@ -40,7 +38,6 @@ class TestItems(BaseTest):
                                    quantity=2
 
                                ))
-        print(json.loads(res.data))
 
         self.assertEqual(401, res.status_code)
 
@@ -49,7 +46,6 @@ class TestItems(BaseTest):
         self.create_items('beef', 20, 2)
         res = self.client.delete('/v1/Shoppinglist/1/Items',
                                  headers=self.headers)
-        print(json.loads(res.data))
         self.assertEqual(200, res.status_code)
 
     def test_user_can_delete_shoppinglist_item_using_id(self):
@@ -57,7 +53,6 @@ class TestItems(BaseTest):
         self.create_items('beef', 20, 2)
         res = self.client.delete('/v1/Shoppinglist/1/item/1',
                                  headers=self.headers)
-        print(json.loads(res.data))
         self.assertEqual(200, res.status_code)
 
     def test_user_can_update_item(self):
@@ -70,5 +65,4 @@ class TestItems(BaseTest):
                                   quantity=46
                               ),
                               headers=self.headers)
-        print(json.loads(res.data))
         self.assertEqual(200, res.status_code)

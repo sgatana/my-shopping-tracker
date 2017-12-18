@@ -34,7 +34,6 @@ class TestEndpoints(unittest.TestCase):
                                         email="steve@gmail.com",
                                         password="Steve@123"
                                     ))
-        print(json.loads(response.data))
         self.assertEqual(200, response.status_code)
 
     def test_registered_users_cannot_login_with_wrong_credentials(self):
@@ -44,7 +43,6 @@ class TestEndpoints(unittest.TestCase):
                                         email="steve@gmail.com",
                                         password="steve1234"
                                     ))
-        print(json.loads(response.data))
         self.assertEqual(401, response.status_code)
 
     def test_user_can_logout(self):
@@ -61,7 +59,6 @@ class TestEndpoints(unittest.TestCase):
         }
         response = self.client.post('/v1/logout',
                                     headers=self.headers)
-        print(response.data)
         self.assertEqual(response.status_code, 200)
 
     def test_non_registered_user_cannot_login(self):
@@ -70,12 +67,10 @@ class TestEndpoints(unittest.TestCase):
                                         email="steve@gmail.com",
                                         password="steve123"
                                     ))
-        print(json.loads(response.data))
         self.assertEqual(404, response.status_code)
 
     def test_page_not_found(self):
         response = self.client.get('/andela')
-        print(json.loads(response.data))
         self.assertEqual(response.status_code, 404)
 
     def test_user_can_load_profile_details(self):
@@ -91,6 +86,5 @@ class TestEndpoints(unittest.TestCase):
         }
         response = self.client.get('/v1/user',
                                     headers=self.headers)
-        print(response.data)
 
         self.assertEqual(response.status_code, 200)
