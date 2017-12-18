@@ -43,7 +43,7 @@ class BaseTest(unittest.TestCase):
                 description=description
             ), headers=self.headers)
 
-    def create_items(self, name, price, quantity):
+    def create_items(self, name, price, quantity, unit):
         """
         create the shopping list item
         :param name:
@@ -55,5 +55,6 @@ class BaseTest(unittest.TestCase):
                          data=dict(
                              name=name,
                              price=price,
-                             quantity=quantity
+                             quantity=quantity,
+                             unit=unit
                          ), headers=self.headers)

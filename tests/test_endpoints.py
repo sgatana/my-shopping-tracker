@@ -65,9 +65,9 @@ class TestEndpoints(unittest.TestCase):
         response = self.client.post('/v1/login',
                                     data=dict(
                                         email="steve@gmail.com",
-                                        password="steve123"
+                                        password="Steve123"
                                     ))
-        self.assertEqual(404, response.status_code)
+        self.assertEqual(401, response.status_code)
 
     def test_page_not_found(self):
         response = self.client.get('/andela')
