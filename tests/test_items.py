@@ -43,6 +43,7 @@ class TestItems(BaseTest):
         self.create_items('rice', 60, 10, "kgs")
         self.create_items('maize', 80, 17, "kgs")
         res = self.client.get('/v1/Shoppinglist/1/Items', headers=self.headers)
+        self.assertEqual(3, len(json.loads(res.data).get("shoppinglist_items")))
         self.assertEqual(200, res.status_code)
 
     # test unauthorized user is forbidden from accessing items
