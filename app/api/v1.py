@@ -181,7 +181,7 @@ class Shopping_List(Resource):
         else:
             return make_response(jsonify({'error': 'Please provide a valid token'}), 403)
 
-    @api.response(404, "ShoppingList Not Found")
+    @api.response(404, "Shopping list Not Found")
     def get(self):
         """
         search shoppinglist based on the provided search parameter
@@ -200,8 +200,8 @@ class Shopping_List(Resource):
                 # get items using search parameter
                 q = request.args.get('q')
                 if q:
-                    shopping_lists = ShoppingList.query.filter(ShoppingList.name.like('%' + q + '%')).filter_by \
-                        (owner_id=user_id)
+                    shopping_lists = ShoppingList.query.filter(
+                        func.lower(ShoppingList.name).like('%' + func.lower(q) + '%')).filter_by(owner_id=user_id)
                     page = request.args.get('page', 1, type=int)
                     limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
                     pagination = shopping_lists.paginate(
@@ -503,7 +503,7 @@ class Items(Resource):
 
                     # get all items
                     shoppinglist_items.append(all_items)
-                return make_response(jsonify({'shopping list items': shoppinglist_items}), 200)
+                return make_response(jsonify({'shoppinglist_items': shoppinglist_items}), 200)
             else:
                 return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
         else:
@@ -678,6 +678,7 @@ class Logout(Resource):
                     db.session.commit()
                     return make_response(jsonify({'message': 'you have successfully logout'}),200)
                 except Exception as e:
+                    print(e)
                     return make_response(jsonify({'error': 'failed to logout, seems you already logged out'}), 403)
             else:
                 return make_response(jsonify({'error': 'failed to logout, you are not logged in'}),403)
