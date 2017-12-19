@@ -1,5 +1,7 @@
 from app import db
 from app.api_models.users import User
+
+
 def register_user(user):
     username = user.get('username')
     email = user.get('email')

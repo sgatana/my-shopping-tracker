@@ -8,7 +8,7 @@ from app.api_models.users import User
 from app.api_models.logout import BlacklistToken
 from app.api_models.shoppinglist import ShoppingList
 from app.api_models.item import Item
-from app.validators import isValidEmail, validate_names, password_validator, validate_username, validate_quantity
+from app.validators import isValidEmail, validate_names, password_validator, validate_username
 from app.methods import register_user, delete_item, update_shopping_list, \
     update_item
 from app.api.parsers import update_shoppinglist_parser, update_item_parser
@@ -216,7 +216,7 @@ class Shopping_List(Resource):
                         next = url_for('api.sh_list', page=page + 1)
                     if shoppinglists:
 
-                        # display items
+                        # display items using search parameter
                         return make_response(jsonify({
                             'shopping list(s)': [
                                 dict(name=shoppinglist.name, description=shoppinglist.description,
@@ -227,7 +227,7 @@ class Shopping_List(Resource):
                             'next': next,
                             'Total': pagination.total
                         }), 200)
-                    return make_response(jsonify({'error': 'you have not created shopping list(s) yet'}), 404)
+                    return make_response(jsonify({'error': 'shopping list with such name does not exist'}), 404)
 
                 else:
                     # display all items without supplying search parameter

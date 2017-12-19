@@ -16,11 +16,6 @@ def password_validator(password):
     return re.match(reg_pass, password)
 
 
-def validate_quantity(quantity):
-    exp = "^[0-9.]+[\s{1,}]*[A-Za-z]*$"
-    return re.match(exp, quantity)
-
-
 def validate_names(name):
     exp = "^[A-Za-z][\sA-Za-z]*$"
     return re.match(exp, name)

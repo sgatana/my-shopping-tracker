@@ -18,17 +18,17 @@ class TestEndpoints(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
+        # set register method to log in user
+    def register_user(self):
+        self.client.post('/v1/register', data=dict(username="steve", email="steve@gmail.com", password="Steve@123",
+                                                   confirm="Steve@123"))
+
     # test user registration
     def test_user_can_register(self):
         response = self.client.post('/v1/register',
                                     data=dict(username="steve", email="steve@gmail.com", password="Steve@123",
                                               confirm="Steve@123"))
         self.assertEqual(201, response.status_code)
-
-    # set register method to log in user
-    def register_user(self):
-        self.client.post('/v1/register', data=dict(username="steve", email="steve@gmail.com", password="Steve@123",
-                                                   confirm="Steve@123"))
 
     # test user login
     def test_only_registered_user_can_login(self):
@@ -94,6 +94,6 @@ class TestEndpoints(unittest.TestCase):
             'Authorization': 'Bearer' + " " + token
         }
         response = self.client.get('/v1/user',
-                                    headers=self.headers)
+                                   headers=self.headers)
 
         self.assertEqual(response.status_code, 200)
