@@ -74,7 +74,6 @@ class TestEndpoints(unittest.TestCase):
         }
         response = self.client.post('/v1/logout',
                                     headers=self.headers)
-        print(response.data)
         self.assertEqual(response.status_code, 200)
 
     # test page not found error handler
