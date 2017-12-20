@@ -232,33 +232,33 @@ class Shopping_List(Resource):
                 else:
                     # display all items without supplying search parameter
                     shopping_lists = ShoppingList.query.filter_by(owner_id=user_id)
-                    if shopping_lists:
-                        page = request.args.get('page', 1, type=int)
-                        limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
-                        pagination = shopping_lists.paginate(
-                            page, per_page=limit, error_out=False
-                        )
+                    page = request.args.get('page', 1, type=int)
+                    limit = request.args.get('limit', current_app.config['FLASKY_POSTS_PER_PAGE'], type=int)
+                    pagination = shopping_lists.paginate(
+                        page, per_page=limit, error_out=False
+                    )
 
-                        # paginate shopping lists
-                        shoppinglists = pagination.items
-                        prev = None
-                        if pagination.has_prev:
-                            prev = url_for('api.sh_list', page=page - 1)
-                        next = None
-                        if pagination.has_next:
-                            next = url_for('api.sh_list', page=page + 1)
-                        if shoppinglists:
-                            return make_response(jsonify({
-                                'shopping list(s)': [
-                                    dict(name=shoppinglist.name, description=shoppinglist.description,
-                                         id=shoppinglist.id,
-                                         owner=user_id, last_modified=shoppinglist.modified_on)
-                                    for shoppinglist in shoppinglists],
-                                'prev': prev,
-                                'next': next,
-                                'Total': pagination.total
-                            }), 200)
-                    return make_response(jsonify({'error': 'you have not created shopping list(s) yet'}), 404)
+                    # paginate shopping lists
+                    shoppinglists = pagination.items
+                    prev = None
+                    if pagination.has_prev:
+                        prev = url_for('api.sh_list', page=page - 1)
+                    next = None
+                    if pagination.has_next:
+                        next = url_for('api.sh_list', page=page + 1)
+                    if shoppinglists:
+                        return make_response(jsonify({
+                            'shopping lists': [
+                                dict(name=shoppinglist.name, description=shoppinglist.description,
+                                     id=shoppinglist.id,
+                                     owner=user_id, last_modified=shoppinglist.modified_on)
+                                for shoppinglist in shoppinglists],
+                            'prev': prev,
+                            'next': next,
+                            'Total': pagination.total
+                        }), 200)
+                    else:
+                        return make_response(jsonify({"error": "you have not added shopping list yet"}), 404)
 
             else:
                 return make_response(jsonify({'error': 'your token is invalid, please log in '}), 401)

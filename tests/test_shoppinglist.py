@@ -19,7 +19,9 @@ class ShoppinglistTestcase(BaseTest):
     # test user can query all the shopping lists
     def test_user_can_get_shoppinglist(self):
         self.create_shopping_lists('supper', 'delicious')
+        self.create_shopping_lists('lunch', 'light meal')
         response = self.client.get('/v1/Shoppinglist', headers=self.headers)
+        self.assertEqual(2, len((json.loads(response.data).get('shopping lists'))))
         self.assertEqual(response.status_code, 200)
 
     # test user can delete all the shopping lists
