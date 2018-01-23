@@ -52,16 +52,16 @@ class Users(Resource):
         # check if email supplied exists in the database,
         if isValidEmail(user['email']):
             if User.query.filter_by(email=user['email']).first() is not None:
-                return make_response(jsonify({'message': 'email already exist'}), 409)
+                return make_response(jsonify({'error': 'email already exist'}), 409)
             # validate username should not contain special characters and spaces
             if not validate_username(user['username']):
                 return make_response(jsonify({'error': 'please enter a valid name, empty and special characters not '
                                                        'allowed'}),401)
             # validate password
             if not password_validator(user['password']):
-                error = ['should have a min length is 6', 'should have at least include a digit number',
-                         'should have an uppercase and a lowercase letter', 'should contain and a special characters']
-                return make_response(jsonify({'error':{'password': error}}),401)
+                error = 'should have a min length is 6, should have at least include a digit number' \
+                         'should have an uppercase and a lowercase letter, should contain and a special characters'
+                return make_response(jsonify({'error': error}),401)
             # make sure your passwords match
             if user['confirm'] != user['password']:
                 return make_response(jsonify({'error': 'Your passwords did not match'}),401)
@@ -119,6 +119,15 @@ class Login(Resource):
         """
         user_data = request.form
         #  check if entered email exists in the database
+        required_fields=('email','password')
+        obj = []
+        for field in required_fields:
+            if not user_data.get(field, None):
+                obj.append(f'{field} is required')
+
+        if obj:
+            return make_response(jsonify({'error': obj}), 400)
+
         user = User.query.filter_by(email=user_data['email']).first()
         if user:
             # verify login credentials (password)
@@ -230,6 +239,7 @@ class Shopping_List(Resource):
                     return make_response(jsonify({'error': 'shopping list with such name does not exist'}), 404)
 
                 else:
+                    # user = User.query.filter_by()
                     # display all items without supplying search parameter
                     shopping_lists = ShoppingList.query.filter_by(owner_id=user_id)
                     page = request.args.get('page', 1, type=int)
@@ -248,14 +258,17 @@ class Shopping_List(Resource):
                         next = url_for('api.sh_list', page=page + 1)
                     if shoppinglists:
                         return make_response(jsonify({
-                            'shopping lists': [
+                            'shoppinglists': [
                                 dict(name=shoppinglist.name, description=shoppinglist.description,
                                      id=shoppinglist.id,
                                      owner=user_id, last_modified=shoppinglist.modified_on)
                                 for shoppinglist in shoppinglists],
                             'prev': prev,
                             'next': next,
-                            'Total': pagination.total
+                            'items':len(shoppinglists),
+                            'current': page,
+                            'Total': pagination.total,
+                            'user':user_id
                         }), 200)
                     else:
                         return make_response(jsonify({"error": "you have not added shopping list yet"}), 404)
@@ -489,7 +502,7 @@ class Items(Resource):
                 # get all the items belonging to a specific shopping list
                 items = Item.query.filter_by(shoppinglist_id=id).filter_by(owner_id=user_id).all()
                 if not items:
-                    return make_response(jsonify({'error': 'Shopping list with provided id does not contain items'}),
+                    return make_response(jsonify({'error': 'This Shoppinglist does not contain items, please add Items'}),
                                          403)
                 shoppinglist_items = []
                 for item in items:

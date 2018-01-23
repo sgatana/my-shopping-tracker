@@ -1,4 +1,5 @@
 # third-party imports
+from flask_cors import CORS
 from flask import Flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -16,6 +17,7 @@ api.add_namespace(ns, path='/v1')
 
 def create_app(config_name):
     app = Flask(__name__)
+    CORS(app)
     Migrate(app, db)
     app.config.from_object(app_config[config_name])
     db.init_app(app)

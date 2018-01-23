@@ -9,7 +9,7 @@ class Config(object):
     DEBUG = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get('SECRET_KEY')
-    FLASKY_POSTS_PER_PAGE = 4
+    FLASKY_POSTS_PER_PAGE = 6
 
 
 class DevelopmentConfig(Config):

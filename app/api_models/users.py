@@ -1,7 +1,6 @@
 import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
-from app.api_models.shoppinglist import ShoppingList
 import jwt
 from flask import current_app
 from app.api_models.logout import BlacklistToken

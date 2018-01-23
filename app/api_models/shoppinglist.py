@@ -1,6 +1,5 @@
 from datetime import datetime
 from app import db
-from app.api_models.item import Item
 
 
 class ShoppingList(db.Model):
