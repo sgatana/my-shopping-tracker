@@ -227,7 +227,7 @@ class Shopping_List(Resource):
 
                         # display items using search parameter
                         return make_response(jsonify({
-                            'shopping list(s)': [
+                            'shoppinglists': [
                                 dict(name=shoppinglist.name, description=shoppinglist.description,
                                      id=shoppinglist.id,
                                      owner=user_id, last_modified=shoppinglist.modified_on)
