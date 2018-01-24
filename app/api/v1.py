@@ -339,7 +339,7 @@ class UpdateshoppingList(Resource):
                 list_name = ShoppingList.query.filter(func.lower(ShoppingList.name)==func.lower(name)).\
                     filter_by(owner_id=user_id).first()
                 if list_name:
-                    return make_response(jsonify({'failed': 'shopping list with similar name exists'}), 409)
+                    return make_response(jsonify({'error': 'shopping list with similar name exists'}), 409)
 
                 shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=user_id).first()
                 if not shoppinglist:
