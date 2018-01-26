@@ -45,7 +45,7 @@ class Users(Resource):
         absent = []
         for field in required_fields:
             if not user.get(field, None):
-                absent.append(f'{field} is required')
+                absent.append('{} is required:'.format(field))
         if absent:
             return make_response(jsonify({'error': absent}), 400)
 
