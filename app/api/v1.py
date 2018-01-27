@@ -103,7 +103,7 @@ class CurrentUser(Resource):
                 else:
                     return make_response(jsonify({'error': 'Your token is invalid, please log in'}), 401)
             except Exception as e:
-                return make_response(jsonify({'error': 'Failed to load user details'}), 404)
+                return make_response(jsonify({'error': 'error to load user details'}), 404)
         else:
             return make_response(jsonify({'error': 'Please provide a valid token'}), 403)
 
@@ -153,7 +153,7 @@ class Shopping_List(Resource):
         #  Get auth token
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return make_response(jsonify({'failed': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'error': 'You have not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -289,7 +289,7 @@ class Shopping_List(Resource):
         else:
             token = auth_header.split(" ")[1]
             if not token:
-                return make_response(jsonify({'failed': 'Your token is invalid'}), 401)
+                return make_response(jsonify({'error': 'Your token is invalid'}), 401)
 
         if token:
             user_id = User.decode_auth_token(token)
@@ -298,7 +298,7 @@ class Shopping_List(Resource):
                 # delete all shopping lists
                 shoppinglist = ShoppingList.query.filter_by(owner_id=user_id).all()
                 if not shoppinglist:
-                    return make_response(jsonify({'failed': 'No shopping list(s) found'}), 404)
+                    return make_response(jsonify({'error': 'No shopping list(s) found'}), 404)
                 for shpl in shoppinglist:
                    delete_item(shpl)
 
@@ -370,7 +370,7 @@ class UpdateshoppingList(Resource):
             else:
                 return make_response(jsonify({'error': 'Your token is invalid, please log in'}), 401)
         else:
-            return make_response(jsonify({'failed': 'Please provide a valid token'}), 403)
+            return make_response(jsonify({'error': 'Please provide a valid token'}), 403)
 
     def delete(self, id):
         """
@@ -395,7 +395,7 @@ class UpdateshoppingList(Resource):
             else:
                 return make_response(jsonify({'error': 'Your token is invalid, please log in'}), 401)
         else:
-            return make_response(jsonify({'failed': 'Please provide a valid token'}), 403)
+            return make_response(jsonify({'error': 'Please provide a valid token'}), 403)
 
     def get(self, id):
         """
@@ -404,7 +404,7 @@ class UpdateshoppingList(Resource):
         auth_header = request.headers.get('Authorization')
 
         if not auth_header:
-            return make_response(jsonify({'failed': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'error': 'You have not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -426,7 +426,7 @@ class UpdateshoppingList(Resource):
             else:
                 return make_response(jsonify({'error': 'your token is invalid'}), 401)
         else:
-            return make_response(jsonify({'failed': 'Please provide a valid token'}), 403)
+            return make_response(jsonify({'error': 'Please provide a valid token'}), 403)
 
 
 @ns.route('/Shoppinglist/<int:id>/Items')
@@ -438,7 +438,7 @@ class Items(Resource):
         """
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return make_response(jsonify({'failed': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'error': 'You have not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -461,13 +461,13 @@ class Items(Resource):
                 shoppinglistid = ShoppingList.query.filter_by(id=id).first()
                 if not shoppinglistid:
                     return make_response(jsonify({'error': 'Shopping list with provided id does not exist'}),403)
-                check_item = Item.query.filter(func.lower(Item.name)==item_name).filter_by(owner_id=owner).first()
+                check_item = Item.query.filter(func.lower(Item.name)==func.lower(item_name)).filter_by(owner_id=owner).first()
                 if check_item:
                     return make_response(jsonify({'error': 'Item with provided name already exist'}), 409)
                 if not validate_names(item_name):
-                    return make_response(jsonify({'failed': 'Please enter a valid Item name'}), 403)
+                    return make_response(jsonify({'error': 'Please enter a valid Item name'}), 403)
                 if [field for field in (price, quantity) if not re.match("^[0-9.]+$", field)]:
-                    return make_response(jsonify({'failed': 'Please enter valid value for  price and quantity'}), 403)
+                    return make_response(jsonify({'error': 'Please enter valid value for  price and quantity'}), 403)
                 if not validate_names(unit):
                     return make_response(jsonify({'error': 'Please enter a valid unit value'}),403)
 
@@ -480,7 +480,7 @@ class Items(Resource):
                     return make_response(jsonify({'message': 'items added successfully'}), 201)
                 return make_response(jsonify({'error': 'item was not added'}), 404)
             else:
-                return make_response(jsonify({'failed': 'Your token is invalid, please log in'}), 401)
+                return make_response(jsonify({'error': 'Your token is invalid, please log in'}), 401)
         else:
             return make_response(jsonify({'forbidden': 'Please provide a valid token'}), 403)
 
@@ -518,7 +518,7 @@ class Items(Resource):
                     shoppinglist_items.append(all_items)
                 return make_response(jsonify({'shoppinglist_items': shoppinglist_items}), 200)
             else:
-                return make_response(jsonify({'message': 'Your token is invalid, please log in'}), 401)
+                return make_response(jsonify({'error': 'Your token is invalid, please log in'}), 401)
         else:
             return make_response(jsonify({'forbidden': 'Please provide a valid token'}), 403)
 
@@ -530,7 +530,7 @@ class Items(Resource):
 
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return make_response(jsonify({'failed': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'error': 'You have not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -549,7 +549,7 @@ class Items(Resource):
                     delete_item(item)
                 return make_response(jsonify({'message': 'items deleted successfully from the shopping list'}), 200)
             else:
-                return make_response(jsonify({'failed': 'Your token is invalid, please log in'}), 401)
+                return make_response(jsonify({'error': 'Your token is invalid, please log in'}), 401)
         else:
             return make_response(jsonify({'forbidden': 'Please provide a valid token'}), 403)
 
@@ -563,7 +563,7 @@ class item(Resource):
         """
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return make_response(jsonify({'failed': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'error': 'You have not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -603,7 +603,7 @@ class item(Resource):
             else:
                 return make_response(jsonify({'error': 'Your token is invalid, please log in'}), 401)
         else:
-            return make_response(jsonify({'forbidden': 'Please provide a valid token'}), 403)
+            return make_response(jsonify({'error': 'Please provide a valid token'}), 403)
 
     def delete(self, list_id, id):
         """
@@ -611,7 +611,7 @@ class item(Resource):
         """
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return make_response(jsonify({'failed': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'error': 'You have not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -639,7 +639,7 @@ class item(Resource):
 
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return make_response(jsonify({'failed': 'You have not provided an authorization token'}), 401)
+            return make_response(jsonify({'error': 'You have not provided an authorization token'}), 401)
 
         else:
             token = auth_header.split(" ")[1]
@@ -692,9 +692,9 @@ class Logout(Resource):
                     return make_response(jsonify({'message': 'you have successfully logout'}),200)
                 except Exception as e:
                     print(e)
-                    return make_response(jsonify({'error': 'failed to logout, seems you already logged out'}), 403)
+                    return make_response(jsonify({'error': 'error to logout, seems you already logged out'}), 403)
             else:
-                return make_response(jsonify({'error': 'failed to logout, you are not logged in'}),403)
+                return make_response(jsonify({'error': 'error to logout, you are not logged in'}),403)
 
         else:
             return make_response(jsonify({'error': 'Please provide a valid token'}), 403)
