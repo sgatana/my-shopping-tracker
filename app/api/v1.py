@@ -1,4 +1,5 @@
 import os, re
+
 from sqlalchemy import func
 from flask import Blueprint, jsonify, request, g, make_response, current_app, url_for
 from flask_restplus import Api, Resource
@@ -268,7 +269,8 @@ class Shopping_List(Resource):
                             'items':len(shoppinglists),
                             'current': page,
                             'Total': pagination.total,
-                            'user':user_id
+                            'user':user_id,
+                            'per_page':limit
                         }), 200)
                     else:
                         return make_response(jsonify({"error": "you have not added shopping list yet"}), 404)
