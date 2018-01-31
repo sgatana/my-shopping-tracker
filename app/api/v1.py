@@ -233,9 +233,13 @@ class Shopping_List(Resource):
                                      id=shoppinglist.id,
                                      owner=user_id, last_modified=shoppinglist.modified_on)
                                 for shoppinglist in shoppinglists],
-                            'prev': prev,
+                             'prev': prev,
                             'next': next,
-                            'Total': pagination.total
+                            'items':len(shoppinglists),
+                            'current': page,
+                            'Total': pagination.total,
+                            'user':user_id,
+                            'per_page':limit
                         }), 200)
                     return make_response(jsonify({'error': 'shopping list with such name does not exist'}), 404)
 
