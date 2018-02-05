@@ -424,11 +424,12 @@ class UpdateshoppingList(Resource):
                 if not shoppinglist:
                     return make_response(jsonify({"error": "No Shopping list found with provided id"}), 404)
                 shoppig_list = {}
+                shoppig_list["id"] = shoppinglist.id
                 shoppig_list["name"] = shoppinglist.name
                 shoppig_list["description"] = shoppinglist.description
                 shoppig_list["last modified"] = shoppinglist.modified_on
                 shoppig_list["owner"] = user
-                return make_response(jsonify({"Shopping list": shoppig_list}))
+                return make_response(jsonify({"Shoppinglist": shoppig_list}))
             else:
                 return make_response(jsonify({'error': 'your token is invalid'}), 401)
         else:
