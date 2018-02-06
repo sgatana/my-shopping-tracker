@@ -23,7 +23,7 @@ class ShoppingList(db.Model):
          string representation that can be used for debugging
          and testing purposes.
         """
-        return '<User %s>' % self.name
+        return '<Shoppinglist %s>' % self.name
 
     def save(self):
         db.session.add(self)

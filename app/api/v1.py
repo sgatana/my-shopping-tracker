@@ -342,9 +342,10 @@ class UpdateshoppingList(Resource):
                                                            "missing"}), 403)
 
                 # check if shopping list name already exist
+                shoppinglistId = ShoppingList.query.filter_by(id=id).filter_by(owner_id=user_id).first()
                 list_name = ShoppingList.query.filter(func.lower(ShoppingList.name)==func.lower(name)).\
                     filter_by(owner_id=user_id).first()
-                if list_name:
+                if list_name and list_name.id != shoppinglistId.id :
                     return make_response(jsonify({'error': 'shopping list with similar name exists'}), 409)
 
                 shoppinglist = ShoppingList.query.filter_by(id=id).filter_by(owner_id=user_id).first()
@@ -583,9 +584,10 @@ class item(Resource):
                 price = args.get('price'),
                 quantity = args.get('quantity')
                 unit = args.get('unit')
+                new_item_id = Item.query.filter_by(id=id, shoppinglist_id=list_id, owner_id=user_id).first()
                 check_item = Item.query.filter(func.lower(Item.name)==func.lower(name)).filter_by(owner_id=user_id).\
                     first()
-                if check_item:
+                if check_item and check_item.id != new_item_id.id:
                     return make_response(jsonify({'error': 'Item with provided name already exist'}), 409)
 
                 # update an item
